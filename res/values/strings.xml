@@ -26,6 +26,11 @@
 	<string name="error_need_root">Need root, to fetch WiFi password!</string>
 	<string name="error_read_file">Error reading wifi config!</string>
 	<string name="custom">Custom</string>
+	<string name="scan">Scan</string>
+	<string name="add">Add Network</string>
+	<string name="wifi_added">Wifi added</string>
+	<string name="wifi_failed">Unable to add Wifi!</string>
+	<string name="click_to_enlarge">Click to enlarge</string>
 	<string-array name="networktypes_">
 		<item>Open</item>
 		<item>WEP</item>

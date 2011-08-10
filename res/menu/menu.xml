@@ -19,6 +19,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 	<item android:title="@string/generate" android:id="@+id/item_generate"
 		android:icon="@android:drawable/ic_menu_share" android:showAsAction="always|withText" />
+	<item android:title="@string/scan" android:id="@+id/item_scan"
+		android:icon="@android:drawable/ic_menu_camera" android:showAsAction="always|withText" />
 	<item android:title="@string/wifi_config" android:id="@+id/item_wifi_config"
 		android:icon="@android:drawable/ic_menu_preferences" android:showAsAction="always|withText" />
 </menu>

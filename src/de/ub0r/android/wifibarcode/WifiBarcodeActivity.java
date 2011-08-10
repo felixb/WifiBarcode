@@ -43,8 +43,10 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -55,12 +57,16 @@ import android.widget.Toast;
 import android.widget.AdapterView.OnItemSelectedListener;
 import de.ub0r.android.lib.Log;
 
-public class WifiBarcodeActivity extends FragmentActivity {
+public class WifiBarcodeActivity extends FragmentActivity implements
+		OnClickListener {
 	/** Tag for log output. */
 	private static final String TAG = "wba";
 
 	/** Cache barcodes. */
 	private HashMap<String, Bitmap> barcodes = new HashMap<String, Bitmap>();
+
+	private Spinner mSpConfigs, mSpNetType;
+	private EditText mEtSsid, mEtPassword;
 
 	private static class WifiAdapter extends ArrayAdapter<WifiConfiguration> {
 		public WifiAdapter(Context context, int textViewResourceId) {
@@ -112,13 +118,37 @@ public class WifiBarcodeActivity extends FragmentActivity {
 	}
 
 	/**
+	 * Encloses the incoming string inside double quotes, if it isn't already
+	 * quoted.
+	 * 
+	 * @param string
+	 *            : the input string
+	 * @return a quoted string, of the form "input". If the input string is
+	 *         null, it returns null as well.
+	 */
+	private static String convertToQuotedString(String string) {
+		if (string == null) {
+			return null;
+		}
+		if (TextUtils.isEmpty(string)) {
+			return "";
+		}
+		int lastPos = string.length() - 1;
+		if (lastPos < 0
+				|| (string.charAt(0) == '"' && string.charAt(lastPos) == '"')) {
+			return string;
+		}
+		return '\"' + string + '\"';
+	}
+
+	/**
 	 * Run command as root.
 	 * 
 	 * @param command
 	 *            command
 	 * @return true, if command was successfully executed
 	 */
-	public static boolean runAsRoot(String command) {
+	private static boolean runAsRoot(String command) {
 		Log.i(TAG, "running command as root: " + command);
 		try {
 			Runtime r = Runtime.getRuntime();
@@ -156,27 +186,30 @@ public class WifiBarcodeActivity extends FragmentActivity {
 		for (WifiConfiguration wc : wcs) {
 			adapter.add(wc);
 		}
-		final Spinner sp = (Spinner) findViewById(R.id.configurations);
-		sp.setAdapter(adapter);
-		sp.setOnItemSelectedListener(new OnItemSelectedListener() {
+		findViewById(R.id.add).setOnClickListener(this);
+		findViewById(R.id.barcode).setOnClickListener(this);
+		mEtSsid = (EditText) findViewById(R.id.ssid);
+		mEtPassword = (EditText) findViewById(R.id.password);
+		mSpConfigs = (Spinner) findViewById(R.id.configurations);
+		mSpNetType = (Spinner) findViewById(R.id.networktype);
+
+		mSpConfigs.setAdapter(adapter);
+		mSpConfigs.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
-				EditText etSsid = (EditText) findViewById(R.id.ssid);
-				Spinner spNetType = (Spinner) findViewById(R.id.networktype);
-				EditText etPwd = (EditText) findViewById(R.id.password);
 				if (position == 0) {
-					etSsid.setText(null);
-					etSsid.setEnabled(true);
-					spNetType.setEnabled(true);
-					spNetType.setSelection(0);
-					etPwd.setText(null);
-					etPwd.setEnabled(true);
+					mEtSsid.setText(null);
+					mEtSsid.setEnabled(true);
+					mSpNetType.setEnabled(true);
+					mSpNetType.setSelection(0);
+					mEtPassword.setText(null);
+					mEtPassword.setEnabled(true);
 				} else {
-					WifiConfiguration wc = ((WifiAdapter) sp.getAdapter())
-							.getItem(position);
-					etSsid.setText(wc.SSID.replaceAll("\"", ""));
-					etSsid.setEnabled(false);
+					WifiConfiguration wc = ((WifiAdapter) mSpConfigs
+							.getAdapter()).getItem(position);
+					mEtSsid.setText(wc.SSID.replaceAll("\"", ""));
+					mEtSsid.setEnabled(false);
 					int i = 0;
 					if (wc.allowedAuthAlgorithms
 							.get(WifiConfiguration.AuthAlgorithm.SHARED)) {
@@ -185,12 +218,13 @@ public class WifiBarcodeActivity extends FragmentActivity {
 							.get(WifiConfiguration.KeyMgmt.WPA_PSK)) {
 						i = 2;
 					}
-					spNetType.setSelection(i);
-					spNetType.setEnabled(false);
-					etPwd.setText(getWifiPAssword(wc));
-					etPwd.setEnabled(false);
+					mSpNetType.setSelection(i);
+					mSpNetType.setEnabled(false);
+					mEtPassword.setText(getWifiPAssword(wc));
+					mEtPassword.setEnabled(false);
 				}
 				showBarcode(true);
+				findViewById(R.id.add).setVisibility(View.GONE);
 			}
 
 			@Override
@@ -200,19 +234,19 @@ public class WifiBarcodeActivity extends FragmentActivity {
 
 		});
 
-		((Spinner) findViewById(R.id.networktype))
-				.setOnItemSelectedListener(new OnItemSelectedListener() {
-					@Override
-					public void onItemSelected(AdapterView<?> parent,
-							View view, int position, long id) {
-						findViewById(R.id.password).setEnabled(position != 0);
-					}
+		mSpNetType.setOnItemSelectedListener(new OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view,
+					int position, long id) {
+				mEtPassword.setEnabled(position != 0
+						&& mSpConfigs.getSelectedItemPosition() == 0);
+			}
 
-					@Override
-					public void onNothingSelected(AdapterView<?> parent) {
-						// nothing to do
-					}
-				});
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+				// nothing to do
+			}
+		});
 	}
 
 	/**
@@ -235,9 +269,134 @@ public class WifiBarcodeActivity extends FragmentActivity {
 		case R.id.item_wifi_config:
 			startActivity(new Intent("android.settings.WIFI_SETTINGS"));
 			return true;
+		case R.id.item_scan:
+			Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+			// intent.setPackage("com.google.zxing.client.android");
+			intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+			startActivityForResult(intent, 0);
+			return true;
 		default:
 			return false;
 		}
+	}
+
+	/**
+	 *{@inheritDoc}
+	 */
+	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+		if (requestCode == 0) {
+			if (resultCode == RESULT_OK) {
+				final String contents = intent.getStringExtra("SCAN_RESULT");
+				Log.d(TAG, "got qr code: " + contents);
+				parseResult(contents);
+				// Handle successful scan
+			} else if (resultCode == RESULT_CANCELED) {
+				// Handle cancel
+			}
+		}
+	}
+
+	/**
+	 *{@inheritDoc}
+	 */
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()) {
+		case R.id.add:
+			addWifi();
+			break;
+		case R.id.barcode:
+			// TODO
+			break;
+		default:
+			break;
+		}
+	}
+
+	private void addWifi() {
+		WifiConfiguration wc = new WifiConfiguration();
+		wc.allowedAuthAlgorithms.clear();
+		wc.allowedGroupCiphers.clear();
+		wc.allowedKeyManagement.clear();
+		wc.allowedPairwiseCiphers.clear();
+		wc.allowedProtocols.clear();
+
+		wc.SSID = convertToQuotedString(mEtSsid.getText().toString());
+		wc.hiddenSSID = true;
+
+		String password = mEtPassword.getText().toString();
+
+		switch (mSpNetType.getSelectedItemPosition()) {
+		case 1: // WEP
+			wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+			wc.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
+			wc.allowedAuthAlgorithms
+					.set(WifiConfiguration.AuthAlgorithm.SHARED);
+			int length = password.length();
+			// WEP-40, WEP-104, and 256-bit WEP (WEP-232?)
+			if ((length == 10 || length == 26 || length == 58)
+					&& password.matches("[0-9A-Fa-f]*")) {
+				wc.wepKeys[0] = password;
+			} else {
+				wc.wepKeys[0] = '"' + password + '"';
+			}
+			break;
+		case 2: // WPA
+			wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+			if (password.matches("[0-9A-Fa-f]{64}")) {
+				wc.preSharedKey = password;
+			} else {
+				wc.preSharedKey = '"' + password + '"';
+			}
+			break;
+		default: // OPEN
+			wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+			break;
+		}
+
+		WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+		wm.addNetwork(wc);
+		int msg;
+		final boolean ret = wm.saveConfiguration();
+		if (ret) {
+			msg = R.string.wifi_added;
+		} else {
+			msg = R.string.wifi_failed;
+		}
+		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+	}
+
+	/**
+	 * Parse result from QR Code.
+	 * 
+	 * @param result
+	 *            content from qr code
+	 */
+	private void parseResult(final String result) {
+		Log.d(TAG, "parseResult(" + result + ")");
+		if (result == null || !result.startsWith("WIFI:")) {
+			// TODO
+			return;
+		}
+
+		String[] c = result.substring("WIFI:".length()).split(";", 3);
+		for (String line : c) {
+			if (line.startsWith("S:")) {
+				mEtSsid.setText(line.substring(2));
+			} else if (line.startsWith("T:NOPASS")) {
+				mSpNetType.setSelection(0);
+			} else if (line.startsWith("T:WEP")) {
+				mSpNetType.setSelection(1);
+			} else if (line.startsWith("T:WPA")) {
+				mSpNetType.setSelection(2);
+			} else if (line.startsWith("P:")) {
+				mEtPassword.setText(line.substring(2).replaceAll(";?;$", ""));
+			}
+		}
+
+		mSpConfigs.setSelection(0);
+
+		findViewById(R.id.add).setVisibility(View.VISIBLE);
 	}
 
 	/**
@@ -306,11 +465,11 @@ public class WifiBarcodeActivity extends FragmentActivity {
 		String url = "http://chart.apis.google.com/chart?cht=qr&chs=350x350&chl=";
 		StringBuffer sb = new StringBuffer();
 		sb.append("WIFI:S:");
-		sb.append(((EditText) findViewById(R.id.ssid)).getText());
+		sb.append(mEtSsid.getText());
 		sb.append(";T:");
-		sb.append(((Spinner) findViewById(R.id.networktype)).getSelectedItem());
+		sb.append(mSpNetType.getSelectedItem());
 		sb.append(";P:");
-		sb.append(((EditText) findViewById(R.id.password)).getText());
+		sb.append(mEtPassword.getText());
 		sb.append(";;");
 		url += URLEncoder.encode(sb.toString());
 		if (!cacheOnly && !barcodes.containsKey(url)) {
@@ -323,9 +482,11 @@ public class WifiBarcodeActivity extends FragmentActivity {
 		if (bc != null) {
 			iv.setImageBitmap(bc);
 			iv.setVisibility(View.VISIBLE);
+			findViewById(R.id.c2e).setVisibility(View.VISIBLE);
 			findViewById(R.id.progress).setVisibility(View.GONE);
 		} else {
 			iv.setVisibility(View.GONE);
+			findViewById(R.id.c2e).setVisibility(View.GONE);
 			if (!cacheOnly) {
 				findViewById(R.id.progress).setVisibility(View.VISIBLE);
 			}
