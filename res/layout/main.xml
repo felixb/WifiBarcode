@@ -17,39 +17,41 @@
 		copy of the GNU General Public License along with this program; If
 		not, see <http://www.gnu.org/licenses/>.
 	-->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical" android:layout_width="fill_parent"
-	android:layout_height="fill_parent">
-	<Spinner android:id="@+id/configurations"
-		android:layout_height="wrap_content" android:layout_width="fill_parent" />
-	<TextView android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:text="@string/ssid" />
-	<EditText android:id="@+id/ssid" android:layout_height="wrap_content"
-		android:layout_width="fill_parent" />
-	<TextView android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:text="@string/networktype" />
-	<Spinner android:id="@+id/networktype" android:layout_height="wrap_content"
-		android:layout_width="fill_parent" android:entries="@array/networktypes_"
-		android:entryValues="@array/networktypes" />
-	<TextView android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:text="@string/password" />
-	<EditText android:id="@+id/password" android:layout_height="wrap_content"
-		android:layout_width="fill_parent" />
-	<Button android:id="@+id/add" android:layout_height="wrap_content"
-		android:layout_width="fill_parent" android:text="@string/add"
-		android:visibility="gone" />
-	<RelativeLayout android:layout_width="fill_parent"
-		android:layout_height="fill_parent" android:minHeight="50dip">
-		<ImageView android:id="@+id/barcode" android:layout_height="fill_parent"
-			android:layout_width="fill_parent" android:scaleType="fitCenter"
-			android:visibility="gone" android:layout_centerInParent="true" />
-		<ProgressBar android:id="@+id/progress"
-			android:layout_height="wrap_content" android:layout_width="wrap_content"
-			android:visibility="gone" android:layout_centerInParent="true" />
-		<TextView android:id="@+id/c2e" android:layout_height="wrap_content"
-			android:layout_width="wrap_content" android:text="@string/click_to_enlarge"
-			android:layout_alignParentBottom="true"
-			android:layout_centerHorizontal="true" android:textColor="#EF000000"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent" android:layout_height="fill_parent">
+	<LinearLayout android:orientation="vertical"
+		android:layout_width="fill_parent" android:layout_height="fill_parent">
+		<Spinner android:id="@+id/configurations"
+			android:layout_height="wrap_content" android:layout_width="fill_parent" />
+		<TextView android:layout_width="fill_parent"
+			android:layout_height="wrap_content" android:text="@string/ssid" />
+		<EditText android:id="@+id/ssid" android:layout_height="wrap_content"
+			android:layout_width="fill_parent" />
+		<TextView android:layout_width="fill_parent"
+			android:layout_height="wrap_content" android:text="@string/networktype" />
+		<Spinner android:id="@+id/networktype" android:layout_height="wrap_content"
+			android:layout_width="fill_parent" android:entries="@array/networktypes_"
+			android:entryValues="@array/networktypes" />
+		<TextView android:layout_width="fill_parent"
+			android:layout_height="wrap_content" android:text="@string/password" />
+		<EditText android:id="@+id/password" android:layout_height="wrap_content"
+			android:layout_width="fill_parent" />
+		<Button android:id="@+id/add" android:layout_height="wrap_content"
+			android:layout_width="fill_parent" android:text="@string/add"
 			android:visibility="gone" />
-	</RelativeLayout>
-</LinearLayout>
+		<RelativeLayout android:layout_width="fill_parent"
+			android:layout_height="fill_parent">
+			<ImageView android:id="@+id/barcode" android:layout_height="fill_parent"
+				android:layout_width="fill_parent" android:scaleType="fitCenter"
+				android:visibility="gone" android:layout_centerInParent="true" />
+			<ProgressBar android:id="@+id/progress"
+				android:layout_height="wrap_content" android:layout_width="wrap_content"
+				android:visibility="gone" android:layout_centerInParent="true" />
+			<TextView android:id="@+id/c2e" android:layout_height="wrap_content"
+				android:layout_width="wrap_content" android:text="@string/click_to_enlarge"
+				android:layout_alignParentBottom="true"
+				android:layout_centerHorizontal="true" android:textColor="#EF000000"
+				android:visibility="gone" />
+		</RelativeLayout>
+	</LinearLayout>
+</ScrollView>

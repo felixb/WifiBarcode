@@ -21,8 +21,11 @@ package de.ub0r.android.wifibarcode;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
@@ -32,10 +35,14 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import android.app.AlertDialog.Builder;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.DialogInterface.OnCancelListener;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -56,53 +63,227 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemSelectedListener;
 import de.ub0r.android.lib.Log;
+import de.ub0r.android.lib.Utils;
 
-public class WifiBarcodeActivity extends FragmentActivity implements
+/**
+ * Main {@link FragmentActivity} showing wifi configuration and barcodes.
+ * 
+ * @author flx
+ */
+public final class WifiBarcodeActivity extends FragmentActivity implements
 		OnClickListener {
 	/** Tag for log output. */
 	private static final String TAG = "wba";
 
 	/** Cache barcodes. */
-	private HashMap<String, Bitmap> barcodes = new HashMap<String, Bitmap>();
+	private BarcodeCache barcodes;
 
+	/** Local {@link Spinner}s. */
 	private Spinner mSpConfigs, mSpNetType;
+	/** Local {@link EditText}s. */
 	private EditText mEtSsid, mEtPassword;
 
+	/** Show barcode dialog. */
+	private boolean showBarcodeDialog = false;
+
+	/** Background color. */
+	private String backgroundColor = "FFFFFF";
+
+	/**
+	 * Cache barcodes.
+	 */
+	private static class BarcodeCache extends HashMap<String, Bitmap> {
+		/** Cache dir. */
+		private final String cacheDir;
+
+		/**
+		 * Default constructor.
+		 * 
+		 * @param context
+		 *            {@link Context}
+		 */
+		public BarcodeCache(final Context context) {
+			super();
+			this.cacheDir = context.getCacheDir().getAbsolutePath()
+					+ "/barcodes/";
+			File f = new File(this.cacheDir);
+			if (!f.isDirectory()) {
+				f.mkdir();
+			}
+		}
+
+		@Override
+		public Bitmap get(final Object key) {
+			Log.d(TAG, "cache.get(" + key + ")");
+			Bitmap b = super.get(key);
+			if (b == null) {
+				Log.d(TAG, "cache/miss");
+				try {
+					// get bitmap from file system
+					String url = (String) key;
+					File f = this.getFile(url);
+					if (f.exists()) {
+						Log.i(TAG, "load barcode from file system..");
+						b = BitmapFactory.decodeStream(new FileInputStream(f));
+						if (b != null) {
+							// save barcode to memory cache
+							super.put(url, b);
+						}
+					}
+				} catch (IOException e) {
+					Log.e(TAG, "io error", e);
+				}
+			}
+			return b;
+		}
+
+		/**
+		 * Load a bitmap from input stream and save it to file.
+		 * 
+		 * @param key
+		 *            url
+		 * @param is
+		 *            {@link InputStream}
+		 * @return {@link Bitmap}
+		 */
+		public Bitmap put(final String key, final InputStream is) {
+			Log.d(TAG, "cache.put(" + key + ")");
+			if (key == null || is == null) {
+				return null;
+			}
+			// final Bitmap b = BitmapFactory.decodeStream(is);
+
+			// super.put(key, b);
+			// put bitmap to file system
+			File f = this.getFile(key);
+			Log.i(TAG, "file " + f.getAbsolutePath()
+					+ " does not exist, write it..");
+			try {
+				// f.createNewFile();
+				FileOutputStream os = new FileOutputStream(f);
+
+				byte[] buffer = new byte[Utils.K];
+				int l = 0;
+				while ((l = is.read(buffer)) > 0) {
+					Log.d(TAG, "write bytes: " + l);
+					os.write(buffer, 0, l);
+				}
+				os.close();
+				Log.d(TAG, "done");
+			} catch (IOException e) {
+				Log.e(TAG, "error writing file: " + f.getAbsolutePath(), e);
+			}
+
+			Bitmap b = BitmapFactory.decodeFile(f.getAbsolutePath());
+			super.put(key, b);
+			return b;
+		}
+
+		/**
+		 * Get {@link File} object for a barcode's url.
+		 * 
+		 * @param url
+		 *            url
+		 * @return {@link File}
+		 */
+		private File getFile(final String url) {
+			final String ret = this.cacheDir
+					+ url.replaceAll(".*chart\\?cht=", "").replaceAll("%", "_")
+							.replaceAll("\\|", "_").replaceAll("&", "_");
+			Log.d(TAG, "getFile(" + url + "): " + ret);
+			return new File(ret);
+		}
+	}
+
+	/**
+	 * Show wifi configuration as {@link ArrayAdapter}.
+	 */
 	private static class WifiAdapter extends ArrayAdapter<WifiConfiguration> {
-		public WifiAdapter(Context context, int textViewResourceId) {
+		/** Passwords. */
+		private final HashMap<WifiConfiguration, String> passwords = // .
+		new HashMap<WifiConfiguration, String>();
+
+		/**
+		 * Default constructor.
+		 * 
+		 * @param context
+		 *            {@link Context}
+		 * @param textViewResourceId
+		 *            Resource for item views.
+		 */
+		public WifiAdapter(final Context context, // .
+				final int textViewResourceId) {
 			super(context, textViewResourceId);
 		}
 
 		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
+		public View getView(final int position, final View convertView,
+				final ViewGroup parent) {
 			View v = super.getView(position, convertView, parent);
-			((TextView) v.findViewById(android.R.id.text1))
-					.setText(getItem(position).SSID.replaceAll("\"", ""));
+			((TextView) v.findViewById(android.R.id.text1)).setText(this
+					.getItem(position).SSID.replaceAll("\"", ""));
 			return v;
 		}
 
 		@Override
-		public View getDropDownView(int position, View convertView,
-				ViewGroup parent) {
+		public View getDropDownView(final int position, final View convertView,
+				final ViewGroup parent) {
 			View v = super.getDropDownView(position, convertView, parent);
-			((TextView) v.findViewById(android.R.id.text1))
-					.setText(getItem(position).SSID.replaceAll("\"", ""));
+			((TextView) v.findViewById(android.R.id.text1)).setText(this
+					.getItem(position).SSID.replaceAll("\"", ""));
 			return v;
+		}
+
+		@Override
+		public void clear() {
+			super.clear();
+			this.passwords.clear();
+		}
+
+		/**
+		 * Add a {@link WifiConfiguration} with password.
+		 * 
+		 * @param object
+		 *            {@link WifiConfiguration}
+		 * @param password
+		 *            password
+		 */
+		public void add(final WifiConfiguration object, final String password) {
+			this.add(object);
+			this.passwords.put(object, password);
+		}
+
+		/**
+		 * Get password for {@link WifiConfiguration}.
+		 * 
+		 * @param position
+		 *            position
+		 * @return password
+		 */
+		public String getPassword(final int position) {
+			WifiConfiguration wc = this.getItem(position);
+			if (wc == null) {
+				return null;
+			}
+			return this.passwords.get(wc);
 		}
 	}
 
+	/**
+	 * Load barcodes in background.
+	 */
 	private class BarcodeLoader extends AsyncTask<String, Void, Void> {
 		@Override
-		protected Void doInBackground(String... url) {
+		protected Void doInBackground(final String... url) {
 			DefaultHttpClient httpClient = new DefaultHttpClient();
 			for (String u : url) {
 				try {
 					Log.d(TAG, "load barcode: " + u);
 					HttpResponse repsonse = httpClient.execute(new HttpGet(u));
-					if (repsonse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-						Bitmap result = BitmapFactory.decodeStream(repsonse
+					if (repsonse.getStatusLine().getStatusCode() == // .
+					HttpStatus.SC_OK) {
+						WifiBarcodeActivity.this.barcodes.put(u, repsonse
 								.getEntity().getContent());
-						barcodes.put(u, result);
 					}
 				} catch (IOException e) {
 					Log.e(TAG, "error fetching barcode", e);
@@ -112,8 +293,9 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 			return null;
 		}
 
-		protected void onPostExecute(Void result) {
-			showBarcode(true);
+		@Override
+		protected void onPostExecute(final Void result) {
+			WifiBarcodeActivity.this.showBarcode(true);
 		}
 	}
 
@@ -126,7 +308,7 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 	 * @return a quoted string, of the form "input". If the input string is
 	 *         null, it returns null as well.
 	 */
-	private static String convertToQuotedString(String string) {
+	private static String convertToQuotedString(final String string) {
 		if (string == null) {
 			return null;
 		}
@@ -148,7 +330,7 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 	 *            command
 	 * @return true, if command was successfully executed
 	 */
-	private static boolean runAsRoot(String command) {
+	private static boolean runAsRoot(final String command) {
 		Log.i(TAG, "running command as root: " + command);
 		try {
 			Runtime r = Runtime.getRuntime();
@@ -170,46 +352,42 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
+	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
+		this.setContentView(R.layout.main);
 
-		WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
-		List<WifiConfiguration> wcs = wm.getConfiguredNetworks();
+		this.barcodes = new BarcodeCache(this);
+
 		WifiAdapter adapter = new WifiAdapter(this,
 				android.R.layout.simple_spinner_item);
-		adapter
-				.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-		WifiConfiguration custom = new WifiConfiguration();
-		custom.SSID = getString(R.string.custom);
-		adapter.add(custom);
-		for (WifiConfiguration wc : wcs) {
-			adapter.add(wc);
-		}
-		findViewById(R.id.add).setOnClickListener(this);
-		findViewById(R.id.barcode).setOnClickListener(this);
-		mEtSsid = (EditText) findViewById(R.id.ssid);
-		mEtPassword = (EditText) findViewById(R.id.password);
-		mSpConfigs = (Spinner) findViewById(R.id.configurations);
-		mSpNetType = (Spinner) findViewById(R.id.networktype);
+		adapter.setDropDownViewResource(// .
+				android.R.layout.simple_spinner_dropdown_item);
+		this.findViewById(R.id.add).setOnClickListener(this);
+		this.findViewById(R.id.barcode).setOnClickListener(this);
+		this.mEtSsid = (EditText) this.findViewById(R.id.ssid);
+		this.mEtPassword = (EditText) this.findViewById(R.id.password);
+		this.mSpConfigs = (Spinner) this.findViewById(R.id.configurations);
+		this.mSpNetType = (Spinner) this.findViewById(R.id.networktype);
 
-		mSpConfigs.setAdapter(adapter);
-		mSpConfigs.setOnItemSelectedListener(new OnItemSelectedListener() {
+		this.mSpConfigs.setAdapter(adapter);
+		this.mSpConfigs.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
-			public void onItemSelected(AdapterView<?> parent, View view,
-					int position, long id) {
+			public void onItemSelected(final AdapterView<?> parent,
+					final View view, final int position, final long id) {
 				if (position == 0) {
-					mEtSsid.setText(null);
-					mEtSsid.setEnabled(true);
-					mSpNetType.setEnabled(true);
-					mSpNetType.setSelection(0);
-					mEtPassword.setText(null);
-					mEtPassword.setEnabled(true);
+					WifiBarcodeActivity.this.mEtSsid.setText(null);
+					WifiBarcodeActivity.this.mEtSsid.setEnabled(true);
+					WifiBarcodeActivity.this.mSpNetType.setEnabled(true);
+					WifiBarcodeActivity.this.mSpNetType.setSelection(0);
+					WifiBarcodeActivity.this.mEtPassword.setText(null);
+					WifiBarcodeActivity.this.mEtPassword.setEnabled(true);
 				} else {
-					WifiConfiguration wc = ((WifiAdapter) mSpConfigs
-							.getAdapter()).getItem(position);
-					mEtSsid.setText(wc.SSID.replaceAll("\"", ""));
-					mEtSsid.setEnabled(false);
+					WifiConfiguration wc = ((WifiAdapter) // .
+					WifiBarcodeActivity.this.mSpConfigs.getAdapter())
+							.getItem(position);
+					WifiBarcodeActivity.this.mEtSsid.setText(wc.SSID
+							.replaceAll("\"", ""));
+					WifiBarcodeActivity.this.mEtSsid.setEnabled(false);
 					int i = 0;
 					if (wc.allowedAuthAlgorithms
 							.get(WifiConfiguration.AuthAlgorithm.SHARED)) {
@@ -218,41 +396,53 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 							.get(WifiConfiguration.KeyMgmt.WPA_PSK)) {
 						i = 2;
 					}
-					mSpNetType.setSelection(i);
-					mSpNetType.setEnabled(false);
-					mEtPassword.setText(getWifiPAssword(wc));
-					mEtPassword.setEnabled(false);
+					WifiBarcodeActivity.this.mSpNetType.setSelection(i);
+					WifiBarcodeActivity.this.mSpNetType.setEnabled(false);
+					WifiBarcodeActivity.this.mEtPassword
+							.setText(WifiBarcodeActivity.this
+									.getWifiPassword(wc));
+					WifiBarcodeActivity.this.mEtPassword.setEnabled(false);
 				}
-				showBarcode(true);
-				findViewById(R.id.add).setVisibility(View.GONE);
+				WifiBarcodeActivity.this.showBarcode(true);
+				WifiBarcodeActivity.this.findViewById(R.id.add).setVisibility(
+						View.GONE);
+
 			}
 
 			@Override
-			public void onNothingSelected(AdapterView<?> parent) {
+			public void onNothingSelected(final AdapterView<?> parent) {
 				// nothing to do
 			}
 
 		});
 
-		mSpNetType.setOnItemSelectedListener(new OnItemSelectedListener() {
+		this.mSpNetType.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
-			public void onItemSelected(AdapterView<?> parent, View view,
-					int position, long id) {
-				mEtPassword.setEnabled(position != 0
-						&& mSpConfigs.getSelectedItemPosition() == 0);
+			public void onItemSelected(final AdapterView<?> parent,
+					final View view, final int position, final long id) {
+				WifiBarcodeActivity.this.mEtPassword.setEnabled(position != 0
+						&& WifiBarcodeActivity.this.mSpConfigs
+								.getSelectedItemPosition() == 0);
 			}
 
 			@Override
-			public void onNothingSelected(AdapterView<?> parent) {
+			public void onNothingSelected(final AdapterView<?> parent) {
 				// nothing to do
 			}
 		});
+
+		final int c = this.getResources().getColor(
+				android.R.color.background_light);
+		this.backgroundColor = Integer.toHexString(Color.red(c))
+				+ Integer.toHexString(Color.green(c))
+				+ Integer.toHexString(Color.blue(c));
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public final boolean onCreateOptionsMenu(final Menu menu) {
+	@Override
+	public boolean onCreateOptionsMenu(final Menu menu) {
 		this.getMenuInflater().inflate(R.menu.menu, menu);
 		return true;
 	}
@@ -260,20 +450,21 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 	/**
 	 *{@inheritDoc}
 	 */
-	public final boolean onOptionsItemSelected(final MenuItem item) {
+	@Override
+	public boolean onOptionsItemSelected(final MenuItem item) {
 		Log.d(TAG, "onOptionsItemSelected(" + item.getItemId() + ")");
 		switch (item.getItemId()) {
 		case R.id.item_generate:
-			showBarcode(false);
+			this.showBarcode(false);
 			return true;
 		case R.id.item_wifi_config:
-			startActivity(new Intent("android.settings.WIFI_SETTINGS"));
+			this.startActivity(new Intent("android.settings.WIFI_SETTINGS"));
 			return true;
 		case R.id.item_scan:
 			Intent intent = new Intent("com.google.zxing.client.android.SCAN");
 			// intent.setPackage("com.google.zxing.client.android");
 			intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
-			startActivityForResult(intent, 0);
+			this.startActivityForResult(intent, 0);
 			return true;
 		default:
 			return false;
@@ -283,12 +474,14 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 	/**
 	 *{@inheritDoc}
 	 */
-	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+	@Override
+	public void onActivityResult(final int requestCode, final int resultCode,
+			final Intent intent) {
 		if (requestCode == 0) {
 			if (resultCode == RESULT_OK) {
 				final String contents = intent.getStringExtra("SCAN_RESULT");
 				Log.d(TAG, "got qr code: " + contents);
-				parseResult(contents);
+				this.parseResult(contents);
 				// Handle successful scan
 			} else if (resultCode == RESULT_CANCELED) {
 				// Handle cancel
@@ -300,19 +493,69 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 	 *{@inheritDoc}
 	 */
 	@Override
-	public void onClick(View v) {
+	public void onClick(final View v) {
 		switch (v.getId()) {
 		case R.id.add:
-			addWifi();
+			this.addWifi();
 			break;
 		case R.id.barcode:
-			// TODO
+			this.showBarcodeDialog();
 			break;
 		default:
 			break;
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected void onResume() {
+		super.onResume();
+		this.loadWifiConfigurations();
+	}
+
+	/**
+	 * Load wifi configurations.
+	 */
+	private void loadWifiConfigurations() {
+		WifiAdapter adapter = (WifiAdapter) this.mSpConfigs.getAdapter();
+		WifiManager wm = (WifiManager) this.getSystemService(WIFI_SERVICE);
+		List<WifiConfiguration> wcs = wm.getConfiguredNetworks();
+		WifiConfiguration custom = new WifiConfiguration();
+		custom.SSID = this.getString(R.string.custom);
+		adapter.clear();
+		adapter.add(custom);
+		this.flushWifiPasswords();
+		for (WifiConfiguration wc : wcs) {
+			adapter.add(wc, this.getWifiPassword(wc));
+		}
+	}
+
+	/**
+	 * Show barcode as dialog.
+	 */
+	private void showBarcodeDialog() {
+		final String url = this.getUrl();
+		Builder b = new Builder(this);
+		b.setTitle(this.mEtSsid.getText());
+		ImageView iv = new ImageView(this);
+		iv.setImageBitmap(this.barcodes.get(url));
+		b.setView(iv);
+		b.setCancelable(true);
+		this.showBarcodeDialog = true;
+		b.setOnCancelListener(new OnCancelListener() {
+			@Override
+			public void onCancel(final DialogInterface dialog) {
+				WifiBarcodeActivity.this.showBarcodeDialog = false;
+			}
+		});
+		b.show();
+	}
+
+	/**
+	 * Add wifi configuration.
+	 */
 	private void addWifi() {
 		WifiConfiguration wc = new WifiConfiguration();
 		wc.allowedAuthAlgorithms.clear();
@@ -321,12 +564,12 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 		wc.allowedPairwiseCiphers.clear();
 		wc.allowedProtocols.clear();
 
-		wc.SSID = convertToQuotedString(mEtSsid.getText().toString());
+		wc.SSID = convertToQuotedString(this.mEtSsid.getText().toString());
 		wc.hiddenSSID = true;
 
-		String password = mEtPassword.getText().toString();
+		String password = this.mEtPassword.getText().toString();
 
-		switch (mSpNetType.getSelectedItemPosition()) {
+		switch (this.mSpNetType.getSelectedItemPosition()) {
 		case 1: // WEP
 			wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
 			wc.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
@@ -354,7 +597,7 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 			break;
 		}
 
-		WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+		WifiManager wm = (WifiManager) this.getSystemService(WIFI_SERVICE);
 		wm.addNetwork(wc);
 		int msg;
 		final boolean ret = wm.saveConfiguration();
@@ -382,21 +625,34 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 		String[] c = result.substring("WIFI:".length()).split(";", 3);
 		for (String line : c) {
 			if (line.startsWith("S:")) {
-				mEtSsid.setText(line.substring(2));
+				this.mEtSsid.setText(line.substring(2));
 			} else if (line.startsWith("T:NOPASS")) {
-				mSpNetType.setSelection(0);
+				this.mSpNetType.setSelection(0);
 			} else if (line.startsWith("T:WEP")) {
-				mSpNetType.setSelection(1);
+				this.mSpNetType.setSelection(1);
 			} else if (line.startsWith("T:WPA")) {
-				mSpNetType.setSelection(2);
+				this.mSpNetType.setSelection(2);
 			} else if (line.startsWith("P:")) {
-				mEtPassword.setText(line.substring(2).replaceAll(";?;$", ""));
+				this.mEtPassword.setText(line.substring(2).replaceAll(";?;$",
+						""));
 			}
 		}
 
-		mSpConfigs.setSelection(0);
+		this.mSpConfigs.setSelection(0);
 
-		findViewById(R.id.add).setVisibility(View.VISIBLE);
+		this.findViewById(R.id.add).setVisibility(View.VISIBLE);
+	}
+
+	/**
+	 * Flush wifi password cache.
+	 */
+	private void flushWifiPasswords() {
+		final String targetFile = this.getCacheDir().getAbsolutePath()
+				+ "/wpa_supplicant.conf";
+		File f = new File(targetFile);
+		if (f.exists()) {
+			f.delete();
+		}
 	}
 
 	/**
@@ -406,17 +662,25 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 	 *            {@link WifiConfiguration}
 	 * @return password
 	 */
-	private String getWifiPAssword(WifiConfiguration wc) {
-		final String targetFile = getCacheDir().getAbsolutePath()
+	private String getWifiPassword(final WifiConfiguration wc) {
+		final String targetFile = this.getCacheDir().getAbsolutePath()
 				+ "/wpa_supplicant.conf";
-		final String command = "cat /data/misc/wifi/wpa_supplicant.conf > "
-				+ targetFile;
-		if (!runAsRoot(command)) {
-			Toast.makeText(this, R.string.error_need_root, Toast.LENGTH_LONG)
+		File f = new File(targetFile);
+		if (!f.exists()) {
+			final String command = "cat /data/misc/wifi/wpa_supplicant.conf > "
+					+ targetFile;
+			if (!runAsRoot(command)) {
+				Toast.makeText(this, R.string.error_need_root,
+						Toast.LENGTH_LONG).show();
+				return null;
+			}
+		}
+		f = new File(targetFile);
+		if (!f.exists()) {
+			Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG)
 					.show();
 			return null;
 		}
-		File f = new File(targetFile);
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(f));
 			String l;
@@ -433,9 +697,12 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 						if (i < 0) {
 							i = config.indexOf("psk=");
 							len = "psk=".length();
-						} else
+						} else {
 							len = "wep_key0=".length();
-						if (i < 0) return null;
+						}
+						if (i < 0) {
+							return null;
+						}
 
 						return config.substring(i + len + 1, config.indexOf(
 								"\n", i) - 1);
@@ -456,43 +723,55 @@ public class WifiBarcodeActivity extends FragmentActivity implements
 	}
 
 	/**
+	 * Get current barcode url.
+	 * 
+	 * @return url
+	 */
+	private String getUrl() {
+		String url = "http://chart.apis.google.com/"
+				+ "chart?cht=qr&chs=300x300&chld=2&chf=bg,s,"
+				+ this.backgroundColor + "&chl=";
+		StringBuffer sb = new StringBuffer();
+		sb.append("WIFI:S:");
+		sb.append(this.mEtSsid.getText());
+		sb.append(";T:");
+		sb.append(this.mSpNetType.getSelectedItem());
+		sb.append(";P:");
+		sb.append(this.mEtPassword.getText());
+		sb.append(";;");
+		url += URLEncoder.encode(sb.toString());
+		return url;
+	}
+
+	/**
 	 * Show barcode.
 	 * 
 	 * @param cacheOnly
 	 *            load only from cache
 	 */
 	private void showBarcode(final boolean cacheOnly) {
-		String url = "http://chart.apis.google.com/chart?cht=qr&chs=350x350&chl=";
-		StringBuffer sb = new StringBuffer();
-		sb.append("WIFI:S:");
-		sb.append(mEtSsid.getText());
-		sb.append(";T:");
-		sb.append(mSpNetType.getSelectedItem());
-		sb.append(";P:");
-		sb.append(mEtPassword.getText());
-		sb.append(";;");
-		url += URLEncoder.encode(sb.toString());
-		if (!cacheOnly && !barcodes.containsKey(url)) {
+		final String url = this.getUrl();
+		if (!cacheOnly && !this.barcodes.containsKey(url)) {
 			Log.i(TAG, "barcode not available, load it...");
 			BarcodeLoader loader = new BarcodeLoader();
 			loader.execute(url);
 		}
-		ImageView iv = (ImageView) findViewById(R.id.barcode);
-		Bitmap bc = barcodes.get(url);
+		ImageView iv = (ImageView) this.findViewById(R.id.barcode);
+		Bitmap bc = this.barcodes.get(url);
 		if (bc != null) {
 			iv.setImageBitmap(bc);
 			iv.setVisibility(View.VISIBLE);
-			findViewById(R.id.c2e).setVisibility(View.VISIBLE);
-			findViewById(R.id.progress).setVisibility(View.GONE);
+			this.findViewById(R.id.c2e).setVisibility(View.VISIBLE);
+			this.findViewById(R.id.progress).setVisibility(View.GONE);
 		} else {
 			iv.setVisibility(View.GONE);
-			findViewById(R.id.c2e).setVisibility(View.GONE);
+			this.findViewById(R.id.c2e).setVisibility(View.GONE);
 			if (!cacheOnly) {
-				findViewById(R.id.progress).setVisibility(View.VISIBLE);
+				this.findViewById(R.id.progress).setVisibility(View.VISIBLE);
 			}
 		}
 		if (cacheOnly) {
-			findViewById(R.id.progress).setVisibility(View.GONE);
+			this.findViewById(R.id.progress).setVisibility(View.GONE);
 		}
 	}
 }
