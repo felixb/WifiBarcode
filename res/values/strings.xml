@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<!--
+		Copyright (C) 2011 Felix Bechstein
+	-->
+	<!--
+		This file is part of WifiBarcode. This program is free software; you can
+		redistribute it and/or modify it under the terms of the GNU General
+		Public License as published by the Free Software Foundation; either
+		version 3 of the License, or (at your option) any later version.
+	-->
+	<!--
+		This program is distributed in the hope that it will be useful, but
+		WITHOUT ANY WARRANTY; without even the implied warranty of
+		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+		General Public License for more details. You should have received a
+		copy of the GNU General Public License along with this program; If
+		not, see <http://www.gnu.org/licenses/>.
+	-->
+<resources>
+	<string name="app_name">WifiBarcode</string>
+	<string name="ssid">SSID</string>
+	<string name="password">Password</string>
+	<string name="networktype">Network Type</string>
+	<string name="generate">Generate Barcode</string>
+	<string name="wifi_config">WiFi settings</string>
+	<string name="error_need_root">Need root, to fetch WiFi password!</string>
+	<string name="error_read_file">Error reading wifi config!</string>
+	<string name="custom">Custom</string>
+	<string-array name="networktypes_">
+		<item>Open</item>
+		<item>WEP</item>
+		<item>WPA/WPA2</item>
+	</string-array>
+	<string-array name="networktypes">
+		<item>nopass</item>
+		<item>WEP</item>
+		<item>WPA/</item>
+	</string-array>
+	<style name="Theme.SherlockUb0r" parent="style/Theme.Sherlock">
+		<item name="abBackground">#B0353535</item>
+	</style>
+</resources>
