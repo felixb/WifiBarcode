@@ -35,14 +35,12 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import android.app.AlertDialog.Builder;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.DialogInterface.OnCancelListener;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -75,6 +73,11 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	/** Tag for log output. */
 	private static final String TAG = "wba";
 
+	/** Extra: barcode's bitmap. */
+	static final String EXTRA_BARCODE = "barcode";
+	/** Extra: barcode's title. */
+	static final String EXTRA_TITLE = "title";
+
 	/** Cache barcodes. */
 	private BarcodeCache barcodes;
 
@@ -82,9 +85,6 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	private Spinner mSpConfigs, mSpNetType;
 	/** Local {@link EditText}s. */
 	private EditText mEtSsid, mEtPassword;
-
-	/** Show barcode dialog. */
-	private boolean showBarcodeDialog = false;
 
 	/** Background color. */
 	private String backgroundColor = "FFFFFF";
@@ -499,7 +499,12 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 			this.addWifi();
 			break;
 		case R.id.barcode:
-			this.showBarcodeDialog();
+			final String url = this.getUrl();
+			final Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url),
+					this, ViewerActivity.class);
+			i.putExtra(EXTRA_BARCODE, this.barcodes.get(url));
+			i.putExtra(EXTRA_TITLE, this.mEtSsid.getText().toString());
+			this.startActivity(i);
 			break;
 		default:
 			break;
@@ -530,27 +535,6 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 		for (WifiConfiguration wc : wcs) {
 			adapter.add(wc, this.getWifiPassword(wc));
 		}
-	}
-
-	/**
-	 * Show barcode as dialog.
-	 */
-	private void showBarcodeDialog() {
-		final String url = this.getUrl();
-		Builder b = new Builder(this);
-		b.setTitle(this.mEtSsid.getText());
-		ImageView iv = new ImageView(this);
-		iv.setImageBitmap(this.barcodes.get(url));
-		b.setView(iv);
-		b.setCancelable(true);
-		this.showBarcodeDialog = true;
-		b.setOnCancelListener(new OnCancelListener() {
-			@Override
-			public void onCancel(final DialogInterface dialog) {
-				WifiBarcodeActivity.this.showBarcodeDialog = false;
-			}
-		});
-		b.show();
 	}
 
 	/**
