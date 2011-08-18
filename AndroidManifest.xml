@@ -29,6 +29,7 @@
 			</intent-filter>
 		</activity>
 		<activity android:name=".ViewerActivity" />
+		<activity android:name=".About" />
 	</application>
 	<supports-screens android:smallScreens="true"
 		android:normalScreens="true" android:largeScreens="true"

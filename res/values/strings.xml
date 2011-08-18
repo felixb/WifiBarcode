@@ -18,20 +18,27 @@
 		not, see <http://www.gnu.org/licenses/>.
 	-->
 <resources>
-	<string name="app_name">WifiBarcode</string>
 	<string name="ssid">SSID</string>
 	<string name="password">Password</string>
 	<string name="networktype">Network Type</string>
 	<string name="generate">Generate Barcode</string>
 	<string name="wifi_config">WiFi settings</string>
 	<string name="error_need_root">Need root, to fetch WiFi password!</string>
-	<string name="error_read_file">Error reading wifi config!</string>
+	<string name="error_read_file">Error reading WiFi config!</string>
+	<string name="error_read_barcode">Error reading Barcode!</string>
+	<string name="error_get_barcode">Error getting Barcode! Check your network connection.</string>
 	<string name="custom">Custom</string>
 	<string name="scan">Scan</string>
 	<string name="add">Add Network</string>
 	<string name="wifi_added">Wifi added</string>
 	<string name="wifi_failed">Unable to add Wifi!</string>
 	<string name="click_to_enlarge">Click to enlarge</string>
+	<string name="install_barcode_scanner_">Install Barcode Scanner</string>
+	<string name="install_barcode_scanner_hint">You need to install <b>Barcode Scanner</b>.</string>
+	<string name="install">Install</string>
+	<string name="about_">About WiFiBarcode</string>
+	<string name="about0">WiFiBarcode lets you share your WiFi configuration via Barcodes. Root users are able to share the WiFi password too!</string>
+	<string name="more_apps_">More Apps..</string>
 	<string-array name="networktypes_">
 		<item>Open</item>
 		<item>WEP</item>
@@ -42,7 +49,4 @@
 		<item>WEP</item>
 		<item>WPA/</item>
 	</string-array>
-	<style name="Theme.SherlockUb0r" parent="style/Theme.Sherlock.Light">
-		<item name="abBackground">#B0353535</item>
-	</style>
 </resources>

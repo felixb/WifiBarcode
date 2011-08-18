@@ -3,10 +3,11 @@
 		Copyright (C) 2011 Felix Bechstein
 	-->
 	<!--
-		This file is part of WifiBarcode. This program is free software; you can
-		redistribute it and/or modify it under the terms of the GNU General
-		Public License as published by the Free Software Foundation; either
-		version 3 of the License, or (at your option) any later version.
+		This file is part of WifiBarcode. This program is free software; you
+		can redistribute it and/or modify it under the terms of the GNU
+		General Public License as published by the Free Software Foundation;
+		either version 3 of the License, or (at your option) any later
+		version.
 	-->
 	<!--
 		This program is distributed in the hope that it will be useful, but
@@ -17,10 +18,15 @@
 		not, see <http://www.gnu.org/licenses/>.
 	-->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-	<item android:title="@string/generate" android:id="@+id/item_generate"
+	<item android:id="@+id/item_generate" android:title="@string/generate"
 		android:icon="@android:drawable/ic_menu_share" android:showAsAction="always|withText" />
-	<item android:title="@string/scan" android:id="@+id/item_scan"
+	<item android:id="@+id/item_scan" android:title="@string/scan"
 		android:icon="@android:drawable/ic_menu_camera" android:showAsAction="always|withText" />
-	<item android:title="@string/wifi_config" android:id="@+id/item_wifi_config"
-		android:icon="@android:drawable/ic_menu_preferences" android:showAsAction="always|withText" />
+	<item android:id="@+id/item_wifi_config" android:title="@string/wifi_config"
+		android:icon="@android:drawable/ic_menu_preferences"
+		android:showAsAction="ifRoom|withText" />
+	<item android:id="@+id/item_about" android:title="@string/about_"
+		android:icon="@android:drawable/ic_menu_info_details" android:showAsAction="never" />
+	<item android:id="@+id/item_more_apps" android:title="@string/more_apps_"
+		android:icon="@drawable/ic_menu_windows" android:showAsAction="never" />
 </menu>

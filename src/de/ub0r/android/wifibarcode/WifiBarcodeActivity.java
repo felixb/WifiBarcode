@@ -35,7 +35,10 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import android.app.AlertDialog.Builder;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -61,6 +64,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemSelectedListener;
 import de.ub0r.android.lib.Log;
+import de.ub0r.android.lib.Market;
 import de.ub0r.android.lib.Utils;
 
 /**
@@ -86,13 +90,17 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	/** Local {@link EditText}s. */
 	private EditText mEtSsid, mEtPassword;
 
-	/** Background color. */
-	private String backgroundColor = "FFFFFF";
+	/** BarCode's background color. */
+	private String bCBackgroundColor = "FFFFFF";
+	/** BarCode's size. */
+	private String bCSize = "200x200";
 
 	/**
 	 * Cache barcodes.
 	 */
 	private static class BarcodeCache extends HashMap<String, Bitmap> {
+		/** Serial Version UID. */
+		private static final long serialVersionUID = -1563072588317040645L;
 		/** Cache dir. */
 		private final String cacheDir;
 
@@ -272,9 +280,10 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	/**
 	 * Load barcodes in background.
 	 */
-	private class BarcodeLoader extends AsyncTask<String, Void, Void> {
+	private class BarcodeLoader extends AsyncTask<String, Void, Exception> {
+
 		@Override
-		protected Void doInBackground(final String... url) {
+		protected Exception doInBackground(final String... url) {
 			DefaultHttpClient httpClient = new DefaultHttpClient();
 			for (String u : url) {
 				try {
@@ -287,15 +296,21 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 					}
 				} catch (IOException e) {
 					Log.e(TAG, "error fetching barcode", e);
-					// TODO: show error message
+					return e;
 				}
 			}
 			return null;
 		}
 
 		@Override
-		protected void onPostExecute(final Void result) {
+		protected void onPostExecute(final Exception result) {
 			WifiBarcodeActivity.this.showBarcode(true);
+			if (result != null) {
+				Toast.makeText(WifiBarcodeActivity.this, result.toString(),
+						Toast.LENGTH_LONG).show();
+				Toast.makeText(WifiBarcodeActivity.this,
+						R.string.error_get_barcode, Toast.LENGTH_LONG).show();
+			}
 		}
 	}
 
@@ -382,9 +397,9 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 					WifiBarcodeActivity.this.mEtPassword.setText(null);
 					WifiBarcodeActivity.this.mEtPassword.setEnabled(true);
 				} else {
-					WifiConfiguration wc = ((WifiAdapter) // .
-					WifiBarcodeActivity.this.mSpConfigs.getAdapter())
-							.getItem(position);
+					WifiAdapter a = (WifiAdapter) // .
+					WifiBarcodeActivity.this.mSpConfigs.getAdapter();
+					WifiConfiguration wc = a.getItem(position);
 					WifiBarcodeActivity.this.mEtSsid.setText(wc.SSID
 							.replaceAll("\"", ""));
 					WifiBarcodeActivity.this.mEtSsid.setEnabled(false);
@@ -398,9 +413,8 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 					}
 					WifiBarcodeActivity.this.mSpNetType.setSelection(i);
 					WifiBarcodeActivity.this.mSpNetType.setEnabled(false);
-					WifiBarcodeActivity.this.mEtPassword
-							.setText(WifiBarcodeActivity.this
-									.getWifiPassword(wc));
+					WifiBarcodeActivity.this.mEtPassword.setText(a
+							.getPassword(position));
 					WifiBarcodeActivity.this.mEtPassword.setEnabled(false);
 				}
 				WifiBarcodeActivity.this.showBarcode(true);
@@ -433,9 +447,10 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 
 		final int c = this.getResources().getColor(
 				android.R.color.background_light);
-		this.backgroundColor = Integer.toHexString(Color.red(c))
+		this.bCBackgroundColor = Integer.toHexString(Color.red(c))
 				+ Integer.toHexString(Color.green(c))
 				+ Integer.toHexString(Color.blue(c));
+		this.bCSize = this.getString(R.string.barcode_size);
 	}
 
 	/**
@@ -461,10 +476,37 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 			this.startActivity(new Intent("android.settings.WIFI_SETTINGS"));
 			return true;
 		case R.id.item_scan:
-			Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-			// intent.setPackage("com.google.zxing.client.android");
-			intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
-			this.startActivityForResult(intent, 0);
+			try {
+				Intent intent = new Intent(
+						"com.google.zxing.client.android.SCAN");
+				// intent.setPackage("com.google.zxing.client.android");
+				intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+				this.startActivityForResult(intent, 0);
+			} catch (ActivityNotFoundException e) {
+				Log.e(TAG, "failed launching scanner", e);
+				Builder b = new Builder(this);
+				b.setTitle(R.string.install_barcode_scanner_);
+				b.setMessage(R.string.install_barcode_scanner_hint);
+				b.setNegativeButton(android.R.string.cancel, null);
+				b.setPositiveButton(R.string.install,
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(final DialogInterface dialog,
+									final int which) {
+								Market.installApp(WifiBarcodeActivity.this,
+										"com.google.zxing" + ".client.android",
+										"http://code.google.com/p"
+												+ "/zxing/downloads/list");
+							}
+						});
+				b.show();
+			}
+			return true;
+		case R.id.item_about:
+			this.startActivity(new Intent(this, About.class));
+			return true;
+		case R.id.item_more_apps:
+			Market.searchMoreApps(this);
 			return true;
 		default:
 			return false;
@@ -482,9 +524,6 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 				final String contents = intent.getStringExtra("SCAN_RESULT");
 				Log.d(TAG, "got qr code: " + contents);
 				this.parseResult(contents);
-				// Handle successful scan
-			} else if (resultCode == RESULT_CANCELED) {
-				// Handle cancel
 			}
 		}
 	}
@@ -602,7 +641,10 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	private void parseResult(final String result) {
 		Log.d(TAG, "parseResult(" + result + ")");
 		if (result == null || !result.startsWith("WIFI:")) {
-			// TODO
+			Log.e(TAG, "error parsing result: " + result);
+			Toast
+					.makeText(this, R.string.error_read_barcode,
+							Toast.LENGTH_LONG).show();
 			return;
 		}
 
@@ -707,14 +749,14 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	}
 
 	/**
-	 * Get current barcode url.
+	 * Get current BarCode's URL.
 	 * 
-	 * @return url
+	 * @return URL
 	 */
 	private String getUrl() {
-		String url = "http://chart.apis.google.com/"
-				+ "chart?cht=qr&chs=300x300&chld=2&chf=bg,s,"
-				+ this.backgroundColor + "&chl=";
+		String url = "http://chart.apis.google.com/" + "chart?cht=qr&chs="
+				+ this.bCSize + "&chld=2&chf=bg,s," + this.bCBackgroundColor
+				+ "&chl=";
 		StringBuffer sb = new StringBuffer();
 		sb.append("WIFI:S:");
 		sb.append(this.mEtSsid.getText());
