@@ -19,6 +19,6 @@
 	-->
 <resources>
 	<string-array name="updates">
-		<item>HEAD: inital release</item>
+		<item>v1.0: inital release</item>
 	</string-array>
 </resources>
