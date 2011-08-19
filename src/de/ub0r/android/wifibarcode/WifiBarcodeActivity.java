@@ -95,6 +95,12 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	/** BarCode's size. */
 	private String bCSize = "200x200";
 
+	/** Extra: Got root? */
+	private static final String EXTRA_GOT_ROOT = "got_root";
+
+	/** False if runAsRoot failed. */
+	private boolean gotRoot = true;
+
 	/**
 	 * Cache barcodes.
 	 */
@@ -371,6 +377,10 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 		super.onCreate(savedInstanceState);
 		this.setContentView(R.layout.main);
 
+		if (savedInstanceState != null) {
+			this.gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
+		}
+
 		this.barcodes = new BarcodeCache(this);
 
 		WifiAdapter adapter = new WifiAdapter(this,
@@ -413,9 +423,10 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 					}
 					WifiBarcodeActivity.this.mSpNetType.setSelection(i);
 					WifiBarcodeActivity.this.mSpNetType.setEnabled(false);
-					WifiBarcodeActivity.this.mEtPassword.setText(a
-							.getPassword(position));
-					WifiBarcodeActivity.this.mEtPassword.setEnabled(false);
+					String p = a.getPassword(position);
+					WifiBarcodeActivity.this.mEtPassword.setText(p);
+					WifiBarcodeActivity.this.mEtPassword.setEnabled(i != 0
+							&& TextUtils.isEmpty(p));
 				}
 				WifiBarcodeActivity.this.showBarcode(true);
 				WifiBarcodeActivity.this.findViewById(R.id.add).setVisibility(
@@ -434,9 +445,12 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 			@Override
 			public void onItemSelected(final AdapterView<?> parent,
 					final View view, final int position, final long id) {
+				String p = WifiBarcodeActivity.this.mEtPassword.getText()
+						.toString();
 				WifiBarcodeActivity.this.mEtPassword.setEnabled(position != 0
-						&& WifiBarcodeActivity.this.mSpConfigs
-								.getSelectedItemPosition() == 0);
+						&& (WifiBarcodeActivity.this.mSpConfigs
+								.getSelectedItemPosition() == 0 || TextUtils
+								.isEmpty(p)));
 			}
 
 			@Override
@@ -451,6 +465,15 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 				+ Integer.toHexString(Color.green(c))
 				+ Integer.toHexString(Color.blue(c));
 		this.bCSize = this.getString(R.string.barcode_size);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected void onSaveInstanceState(final Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putBoolean(EXTRA_GOT_ROOT, this.gotRoot);
 	}
 
 	/**
@@ -689,15 +712,22 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	 * @return password
 	 */
 	private String getWifiPassword(final WifiConfiguration wc) {
+		Log.d(TAG, "getWifiPassword(" + wc + ")");
 		final String targetFile = this.getCacheDir().getAbsolutePath()
 				+ "/wpa_supplicant.conf";
 		File f = new File(targetFile);
 		if (!f.exists()) {
-			final String command = "cat /data/misc/wifi/wpa_supplicant.conf > "
-					+ targetFile;
-			if (!runAsRoot(command)) {
-				Toast.makeText(this, R.string.error_need_root,
-						Toast.LENGTH_LONG).show();
+			if (this.gotRoot) {
+				final String command = "cat /data/misc/wifi/wpa_supplicant.conf"
+						+ " > " + targetFile;
+				if (!runAsRoot(command)) {
+					Toast.makeText(this, R.string.error_need_root,
+							Toast.LENGTH_LONG).show();
+					this.gotRoot = false;
+					return null;
+				}
+			} else {
+				Log.w(TAG, "gotRoot=false");
 				return null;
 			}
 		}
