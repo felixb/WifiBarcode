@@ -24,9 +24,10 @@
 		android:icon="@android:drawable/ic_menu_camera" android:showAsAction="always|withText" />
 	<item android:id="@+id/item_wifi_config" android:title="@string/wifi_config"
 		android:icon="@android:drawable/ic_menu_preferences"
-		android:showAsAction="ifRoom|withText" />
+		android:showAsAction="never" />
 	<item android:id="@+id/item_about" android:title="@string/about_"
-		android:icon="@android:drawable/ic_menu_info_details" android:showAsAction="never" />
+		android:icon="@android:drawable/ic_menu_info_details"
+		android:showAsAction="never" />
 	<item android:id="@+id/item_more_apps" android:title="@string/more_apps_"
 		android:icon="@drawable/ic_menu_windows" android:showAsAction="never" />
 </menu>

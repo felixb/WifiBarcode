@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<!--
+		Copyright (C) 2011 Felix Bechstein
+	-->
+	<!--
+		This file is part of WifiBarcode. This program is free software; you
+		can redistribute it and/or modify it under the terms of the GNU
+		General Public License as published by the Free Software Foundation;
+		either version 3 of the License, or (at your option) any later
+		version.
+	-->
+	<!--
+		This program is distributed in the hope that it will be useful, but
+		WITHOUT ANY WARRANTY; without even the implied warranty of
+		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+		General Public License for more details. You should have received a
+		copy of the GNU General Public License along with this program; If
+		not, see <http://www.gnu.org/licenses/>.
+	-->
+<resources>
+	<string name="ssid">SSID</string>
+	<string name="password">Passwort</string>
+	<string name="networktype">Netzwerk Typ</string>
+	<string name="generate">Barcode generieren</string>
+	<string name="wifi_config">WLAN Einstellungen</string>
+	<string name="error_need_root">Brauche root um die WLAN Passwörter auszulesen!</string>
+	<string name="error_read_file">Fehler beim Auslesen der WLAN Config!</string>
+	<string name="error_read_barcode">Fehler beim Auslesen des Barcodes!</string>
+	<string name="error_get_barcode">Fehler beim Laden des Barcodes!\nÜberprüfe deine Internetverbindung.</string>
+	<string name="custom">Benutzerdefiniert</string>
+	<string name="scan">Scan</string>
+	<string name="add">Netzwerk hinzufügen</string>
+	<string name="wifi_added">Netzwerk hinzugefügt</string>
+	<string name="wifi_failed">Konnte WLAN nicht hinzufügen!</string>
+	<string name="click_to_enlarge">Zum Vergrößern klicken</string>
+	<string name="install_barcode_scanner_">Installiere Barcode Scanner</string>
+	<string name="install_barcode_scanner_hint">Du musst <b>Barcode Scanner</b> installieren.</string>
+	<string name="install">Installieren</string>
+	<string name="about_">Über WiFiBarcode</string>
+	<string name="more_apps_">Mehr Apps..</string>
+	<string-array name="networktypes_">
+		<item>Offen</item>
+		<item>WEP</item>
+		<item>WPA/WPA2</item>
+	</string-array>
+</resources>

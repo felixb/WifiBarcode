@@ -15,8 +15,7 @@
 		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 		General Public License for more details. You should have received a
 		copy of the GNU General Public License along with this program; If
-		not, see <http://www.gnu.org/licenses/>. <item
-		name="abBackground">#B0353535</item>
+		not, see <http://www.gnu.org/licenses/>.
 	-->
 <resources>
 	<string name="app_name">WiFiBarcode</string>
@@ -24,8 +23,14 @@
 	<string name="author">Felix Bechstein &lt;f@ub0r.de&gt;</string>
 	<string name="source">http://github.com/felixb/WifiBarcode</string>
 	<string name="website">http://code.google.com/p/ub0rapps/</string>
-	
+
 	<string name="barcode_size">250x250</string>
+
+	<string-array name="networktypes">
+		<item>nopass</item>
+		<item>WEP</item>
+		<item>WPA</item>
+	</string-array>
 
 	<color name="actionbar_text_color">#C0FFFFFF</color>
 	<color name="actionbar_background_color">#B0101010</color>

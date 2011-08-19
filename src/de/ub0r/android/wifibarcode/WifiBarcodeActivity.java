@@ -63,6 +63,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemSelectedListener;
+import de.ub0r.android.lib.Changelog;
 import de.ub0r.android.lib.Log;
 import de.ub0r.android.lib.Market;
 import de.ub0r.android.lib.Utils;
@@ -377,6 +378,8 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 		super.onCreate(savedInstanceState);
 		this.setContentView(R.layout.main);
 
+		Changelog.showChangelog(this);
+
 		if (savedInstanceState != null) {
 			this.gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
 		}
@@ -644,10 +647,11 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 		}
 
 		WifiManager wm = (WifiManager) this.getSystemService(WIFI_SERVICE);
-		wm.addNetwork(wc);
+		int netId = wm.addNetwork(wc);
 		int msg;
 		final boolean ret = wm.saveConfiguration();
 		if (ret) {
+			wm.enableNetwork(netId, false);
 			msg = R.string.wifi_added;
 		} else {
 			msg = R.string.wifi_failed;
