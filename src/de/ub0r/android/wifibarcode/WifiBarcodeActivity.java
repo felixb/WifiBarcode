@@ -53,17 +53,17 @@ import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
 import android.text.TextUtils;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.OnItemSelectedListener;
-import de.ub0r.android.lib.Changelog;
+import de.ub0r.android.lib.ChangelogHelper;
 import de.ub0r.android.lib.Log;
 import de.ub0r.android.lib.Market;
 import de.ub0r.android.lib.Utils;
@@ -378,7 +378,7 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 		super.onCreate(savedInstanceState);
 		this.setContentView(R.layout.main);
 
-		Changelog.showChangelog(this);
+		ChangelogHelper.showChangelog(this, true);
 
 		if (savedInstanceState != null) {
 			this.gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
@@ -389,7 +389,7 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 		WifiAdapter adapter = new WifiAdapter(this,
 				android.R.layout.simple_spinner_item);
 		adapter.setDropDownViewResource(// .
-				android.R.layout.simple_spinner_dropdown_item);
+		android.R.layout.simple_spinner_dropdown_item);
 		this.findViewById(R.id.add).setOnClickListener(this);
 		this.findViewById(R.id.barcode).setOnClickListener(this);
 		this.mEtSsid = (EditText) this.findViewById(R.id.ssid);
@@ -489,7 +489,7 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	}
 
 	/**
-	 *{@inheritDoc}
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean onOptionsItemSelected(final MenuItem item) {
@@ -540,7 +540,7 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	}
 
 	/**
-	 *{@inheritDoc}
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void onActivityResult(final int requestCode, final int resultCode,
@@ -555,7 +555,7 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	}
 
 	/**
-	 *{@inheritDoc}
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void onClick(final View v) {
@@ -669,9 +669,8 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 		Log.d(TAG, "parseResult(" + result + ")");
 		if (result == null || !result.startsWith("WIFI:")) {
 			Log.e(TAG, "error parsing result: " + result);
-			Toast
-					.makeText(this, R.string.error_read_barcode,
-							Toast.LENGTH_LONG).show();
+			Toast.makeText(this, R.string.error_read_barcode, Toast.LENGTH_LONG)
+					.show();
 			return;
 		}
 
@@ -764,8 +763,8 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 							return null;
 						}
 
-						return config.substring(i + len + 1, config.indexOf(
-								"\n", i) - 1);
+						return config.substring(i + len + 1,
+								config.indexOf("\n", i) - 1);
 
 					}
 					sb = new StringBuffer();
