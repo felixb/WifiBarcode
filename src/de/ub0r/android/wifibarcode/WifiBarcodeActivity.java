@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Felix Bechstein
+ * Copyright (C) 2011-2012 Felix Bechstein
  * 
  * This file is part of WifiBarcode.
  * 
@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
@@ -48,9 +49,6 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.view.Menu;
-import android.support.v4.view.MenuItem;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -63,17 +61,22 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuItem;
+
 import de.ub0r.android.lib.ChangelogHelper;
 import de.ub0r.android.lib.Log;
 import de.ub0r.android.lib.Market;
 import de.ub0r.android.lib.Utils;
 
 /**
- * Main {@link FragmentActivity} showing wifi configuration and barcodes.
+ * Main {@link SherlockActivity} showing wifi configuration and barcodes.
  * 
  * @author flx
  */
-public final class WifiBarcodeActivity extends FragmentActivity implements
+public final class WifiBarcodeActivity extends SherlockActivity implements
 		OnClickListener {
 	/** Tag for log output. */
 	private static final String TAG = "wba";
@@ -484,7 +487,7 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 	 */
 	@Override
 	public boolean onCreateOptionsMenu(final Menu menu) {
-		this.getMenuInflater().inflate(R.menu.menu, menu);
+		this.getSupportMenuInflater().inflate(R.menu.menu, menu);
 		return true;
 	}
 
@@ -790,15 +793,26 @@ public final class WifiBarcodeActivity extends FragmentActivity implements
 		String url = "http://chart.apis.google.com/" + "chart?cht=qr&chs="
 				+ this.bCSize + "&chld=2&chf=bg,s," + this.bCBackgroundColor
 				+ "&chl=";
+		int type = this.mSpNetType.getSelectedItemPosition();
+		String[] types = this.getResources().getStringArray(
+				R.array.networktypes);
 		StringBuffer sb = new StringBuffer();
-		sb.append("WIFI:S:");
+		sb.append("WIFI:T:");
+		sb.append(types[type]);
+		sb.append(";S:");
 		sb.append(this.mEtSsid.getText());
-		sb.append(";T:");
-		sb.append(this.mSpNetType.getSelectedItem());
 		sb.append(";P:");
-		sb.append(this.mEtPassword.getText());
+		if (type == 0) {
+			sb.append("nopass");
+		} else {
+			sb.append(this.mEtPassword.getText());
+		}
 		sb.append(";;");
-		url += URLEncoder.encode(sb.toString());
+		try {
+			url += URLEncoder.encode(sb.toString(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "error url encoding barcode");
+		}
 		return url;
 	}
 

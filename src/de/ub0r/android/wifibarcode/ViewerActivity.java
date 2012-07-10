@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Felix Bechstein
+ * Copyright (C) 2011-2012 Felix Bechstein
  * 
  * This file is part of WifiBarcode.
  * 
@@ -21,16 +21,17 @@ package de.ub0r.android.wifibarcode;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.view.MenuItem;
 import android.widget.ImageView;
+
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.MenuItem;
 
 /**
  * Show a barcode in full screen.
  * 
  * @author flx
  */
-public final class ViewerActivity extends FragmentActivity {
+public final class ViewerActivity extends SherlockActivity {
 	/**
 	 * {@inheritDoc}
 	 */
@@ -60,7 +61,7 @@ public final class ViewerActivity extends FragmentActivity {
 	}
 
 	/**
-	 *{@inheritDoc}
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean onOptionsItemSelected(final MenuItem item) {
