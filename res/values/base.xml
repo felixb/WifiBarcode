@@ -18,7 +18,7 @@
 <resources>
 
     <string name="app_name" translatable="false">WiFiBarcode</string>
-    <string name="app_version" translatable="false">1.0</string>
+    <string name="app_version" translatable="false">1.1</string>
     <string name="author" translatable="false">Felix Bechstein &lt;f@ub0r.de&gt;</string>
     <string name="source" translatable="false">http://github.com/felixb/WifiBarcode</string>
     <string name="website" translatable="false">http://code.google.com/p/ub0rapps/</string>

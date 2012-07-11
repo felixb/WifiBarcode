@@ -19,7 +19,7 @@
 	-->
 <resources>
 	<string-array name="updates">
-		<item>HEAD: fix barcodes</item>
+		<item>v1.1: fix barcodes</item>
 		<item>v1.0: inital release</item>
 	</string-array>
 </resources>
