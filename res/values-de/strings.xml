@@ -18,6 +18,11 @@
 		not, see <http://www.gnu.org/licenses/>.
 	-->
 <resources>
+	<string name="license_">Lizenz:</string>
+	<string name="license">GPLv3 - siehe http://www.gnu.org/licenses/gpl-3.0.txt</string>
+	<string name="author_">Autor:</string>
+	<string name="website_">Website:</string>
+	<string name="source_">Quelltext:</string>
 	<string name="ssid">SSID</string>
 	<string name="password">Passwort</string>
 	<string name="networktype">Netzwerk Typ</string>

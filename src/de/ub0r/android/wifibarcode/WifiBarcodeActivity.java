@@ -381,7 +381,9 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 		super.onCreate(savedInstanceState);
 		this.setContentView(R.layout.main);
 
-		ChangelogHelper.showChangelog(this, true);
+		ChangelogHelper.showChangelog(this,
+				this.getString(R.string.changelog_),
+				this.getString(R.string.app_name), R.array.updates, -1);
 
 		if (savedInstanceState != null) {
 			this.gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);

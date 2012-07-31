@@ -49,10 +49,6 @@
         </activity>
         <activity android:name=".ViewerActivity" />
         <activity android:name=".About" />
-        <activity
-            android:name="de.ub0r.android.lib.ChangelogFragmentActivity"
-            android:configChanges="orientation|keyboardHidden"
-            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

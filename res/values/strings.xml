@@ -18,6 +18,11 @@
 		not, see <http://www.gnu.org/licenses/>.
 	-->
 <resources>
+	<string name="license_">License:</string>
+	<string name="license">GPLv3 - see http://www.gnu.org/licenses/gpl-3.0.txt</string>
+	<string name="author_">Author:</string>
+	<string name="website_">Website:</string>
+	<string name="source_">Sourcescode:</string>
 	<string name="ssid">SSID</string>
 	<string name="password">Password</string>
 	<string name="networktype">Network Type</string>
@@ -43,4 +48,5 @@
 		<item>WEP</item>
 		<item>WPA/WPA2</item>
 	</string-array>
+	<string name="changelog_" translatable="false">Changelog</string>
 </resources>
