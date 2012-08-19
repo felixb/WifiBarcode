@@ -81,6 +81,10 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 	/** Tag for log output. */
 	private static final String TAG = "wba";
 
+	static {
+		Log.init("WifiBarcode");
+	}
+
 	/** Extra: barcode's bitmap. */
 	static final String EXTRA_BARCODE = "barcode";
 	/** Extra: barcode's title. */
@@ -387,6 +391,11 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 
 		if (savedInstanceState != null) {
 			this.gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
+		} else {
+			if (!this.getCacheFile().delete()) {
+				Log.e(TAG, "error deleting file: "
+						+ this.getCacheFile().getAbsolutePath());
+			}
 		}
 
 		this.barcodes = new BarcodeCache(this);
@@ -713,6 +722,13 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 	}
 
 	/**
+	 * @return file holding cached wpa_supplicant.conf.
+	 */
+	private File getCacheFile() {
+		return new File(this.getCacheDir(), "wpa_supplicant.conf");
+	}
+
+	/**
 	 * Get WiFi password.
 	 * 
 	 * @param wc
@@ -721,13 +737,14 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 	 */
 	private String getWifiPassword(final WifiConfiguration wc) {
 		Log.d(TAG, "getWifiPassword(" + wc + ")");
-		final String targetFile = this.getCacheDir().getAbsolutePath()
-				+ "/wpa_supplicant.conf";
-		File f = new File(targetFile);
+		File f = this.getCacheFile();
 		if (!f.exists()) {
 			if (this.gotRoot) {
 				final String command = "cat /data/misc/wifi/wpa_supplicant.conf"
-						+ " > " + targetFile;
+						+ " > "
+						+ f.getAbsolutePath()
+						+ "\n chmod 666 "
+						+ f.getAbsolutePath();
 				if (!runAsRoot(command)) {
 					Toast.makeText(this, R.string.error_need_root,
 							Toast.LENGTH_LONG).show();
@@ -739,7 +756,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 				return null;
 			}
 		}
-		f = new File(targetFile);
+		f = new File(f.getAbsolutePath());
 		if (!f.exists()) {
 			Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG)
 					.show();
@@ -777,8 +794,8 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 				sb.append(l + "\n");
 			}
 			br.close();
-			f.delete();
 		} catch (IOException e) {
+			Log.e(TAG, "error reading file", e);
 			Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG)
 					.show();
 			return null;
