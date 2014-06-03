@@ -19,6 +19,7 @@
 	-->
 <resources>
 	<string-array name="updates">
+		<item>v1.3: show active WiFi on start, minor layout changes</item>
 		<item>v1.2: fix file permissions, change barcode size, reduce root access</item>
 		<item>v1.1: fix barcodes</item>
 		<item>v1.0: inital release</item>
