@@ -29,28 +29,28 @@ import android.os.Bundle;
  * @author flx
  */
 public final class About extends SherlockActivity {
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void onCreate(final Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		this.setContentView(R.layout.about);
-		this.setTitle(this.getString(R.string.about_) + " v"
-				+ BuildConfig.VERSION_NAME);
-	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public boolean onOptionsItemSelected(final MenuItem item) {
-		switch (item.getItemId()) {
-		case android.R.id.home:
-			this.finish();
-			return true;
-		default:
-			return false;
-		}
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.about);
+        setTitle(this.getString(R.string.about_) + " v" + BuildConfig.VERSION_NAME);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+            default:
+                return false;
+        }
+    }
 }

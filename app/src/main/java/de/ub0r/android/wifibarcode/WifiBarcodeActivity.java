@@ -73,795 +73,825 @@ import de.ub0r.android.logg0r.Log;
 
 /**
  * Main {@link SherlockActivity} showing wifi configuration and barcodes.
- * 
+ *
  * @author flx
  */
 public final class WifiBarcodeActivity extends SherlockActivity implements
-		OnClickListener {
-	/** Tag for log output. */
-	private static final String TAG = "WifiBarcodeActivity";
+        OnClickListener {
 
-	/** Extra: barcode's bitmap. */
-	static final String EXTRA_BARCODE = "barcode";
-	/** Extra: barcode's title. */
-	static final String EXTRA_TITLE = "title";
+    /**
+     * Tag for log output.
+     */
+    private static final String TAG = "WifiBarcodeActivity";
 
-	/** Cache barcodes. */
-	private BarcodeCache barcodes;
+    /**
+     * Extra: barcode's bitmap.
+     */
+    static final String EXTRA_BARCODE = "barcode";
 
-	/** Local {@link Spinner}s. */
-	private Spinner mSpConfigs, mSpNetType;
-	/** Local {@link EditText}s. */
-	private EditText mEtSsid, mEtPassword;
+    /**
+     * Extra: barcode's title.
+     */
+    static final String EXTRA_TITLE = "title";
 
-	/** BarCode's background color. */
-	private String bCBackgroundColor = "FFFFFF";
-	/** BarCode's size. */
-	private String bCSize = "200x200";
+    /**
+     * Cache barcodes.
+     */
+    private BarcodeCache barcodes;
 
-	/** Extra: Got root? */
-	private static final String EXTRA_GOT_ROOT = "got_root";
+    /**
+     * Local {@link Spinner}s.
+     */
+    private Spinner mSpConfigs, mSpNetType;
 
-	/** False if runAsRoot failed. */
-	private boolean gotRoot = true;
+    /**
+     * Local {@link EditText}s.
+     */
+    private EditText mEtSsid, mEtPassword;
 
-	/**
-	 * Cache barcodes.
-	 */
-	private static class BarcodeCache extends HashMap<String, Bitmap> {
-		/** Serial Version UID. */
-		private static final long serialVersionUID = -1563072588317040645L;
-		/** Cache dir. */
-		private final String cacheDir;
+    /**
+     * BarCode's background color.
+     */
+    private String bCBackgroundColor = "FFFFFF";
 
-		/**
-		 * Default constructor.
-		 * 
-		 * @param context
-		 *            {@link Context}
-		 */
-		public BarcodeCache(final Context context) {
-			super();
-			this.cacheDir = context.getCacheDir().getAbsolutePath()
-					+ "/barcodes/";
-			File f = new File(this.cacheDir);
-			if (!f.isDirectory()) {
-				f.mkdir();
-			}
-		}
+    /**
+     * BarCode's size.
+     */
+    private String bCSize = "200x200";
 
-		@Override
-		public Bitmap get(final Object key) {
-			Log.d(TAG, "cache.get(" + key + ")");
-			Bitmap b = super.get(key);
-			if (b == null) {
-				Log.d(TAG, "cache/miss");
-				try {
-					// get bitmap from file system
-					String url = (String) key;
-					File f = this.getFile(url);
-					if (f.exists()) {
-						Log.i(TAG, "load barcode from file system..");
-						b = BitmapFactory.decodeStream(new FileInputStream(f));
-						if (b != null) {
-							// save barcode to memory cache
-							super.put(url, b);
-						}
-					}
-				} catch (IOException e) {
-					Log.e(TAG, "io error", e);
-				}
-			}
-			return b;
-		}
+    /**
+     * Extra: Got root?
+     */
+    private static final String EXTRA_GOT_ROOT = "got_root";
 
-		/**
-		 * Load a bitmap from input stream and save it to file.
-		 * 
-		 * @param key
-		 *            url
-		 * @param is
-		 *            {@link InputStream}
-		 * @return {@link Bitmap}
-		 */
-		public Bitmap put(final String key, final InputStream is) {
-			Log.d(TAG, "cache.put(" + key + ")");
-			if (key == null || is == null) {
-				return null;
-			}
-			// final Bitmap b = BitmapFactory.decodeStream(is);
+    /**
+     * False if runAsRoot failed.
+     */
+    private boolean gotRoot = true;
 
-			// super.put(key, b);
-			// put bitmap to file system
-			File f = this.getFile(key);
-			Log.i(TAG, "file " + f.getAbsolutePath()
-					+ " does not exist, write it..");
-			try {
-				// f.createNewFile();
-				FileOutputStream os = new FileOutputStream(f);
+    /**
+     * Cache barcodes.
+     */
+    private static class BarcodeCache extends HashMap<String, Bitmap> {
 
-				byte[] buffer = new byte[Utils.K];
-				int l = 0;
-				while ((l = is.read(buffer)) > 0) {
-					Log.d(TAG, "write bytes: " + l);
-					os.write(buffer, 0, l);
-				}
-				os.close();
-				Log.d(TAG, "done");
-			} catch (IOException e) {
-				Log.e(TAG, "error writing file: " + f.getAbsolutePath(), e);
-			}
+        /**
+         * Serial Version UID.
+         */
+        private static final long serialVersionUID = -1563072588317040645L;
 
-			Bitmap b = BitmapFactory.decodeFile(f.getAbsolutePath());
-			super.put(key, b);
-			return b;
-		}
+        /**
+         * Cache dir.
+         */
+        private final String cacheDir;
 
-		/**
-		 * Get {@link File} object for a barcode's url.
-		 * 
-		 * @param url
-		 *            url
-		 * @return {@link File}
-		 */
-		private File getFile(final String url) {
-			final String ret = this.cacheDir
-					+ url.replaceAll(".*chart\\?cht=", "").replaceAll("%", "_")
-							.replaceAll("\\|", "_").replaceAll("&", "_");
-			Log.d(TAG, "getFile(" + url + "): " + ret);
-			return new File(ret);
-		}
-	}
+        /**
+         * Default constructor.
+         *
+         * @param context {@link Context}
+         */
+        public BarcodeCache(final Context context) {
+            super();
+            //noinspection ConstantConditions
+            cacheDir = context.getCacheDir().getAbsolutePath()
+                    + "/barcodes/";
+            File f = new File(cacheDir);
+            if (!f.isDirectory()) {
+                //noinspection ResultOfMethodCallIgnored
+                f.mkdir();
+            }
+        }
 
-	/**
-	 * Show wifi configuration as {@link ArrayAdapter}.
-	 */
-	private static class WifiAdapter extends ArrayAdapter<WifiConfiguration> {
-		/** Passwords. */
-		private final HashMap<WifiConfiguration, String> passwords = // .
-		new HashMap<WifiConfiguration, String>();
+        @Override
+        public Bitmap get(final Object key) {
+            Log.d(TAG, "cache.get(" + key + ")");
+            Bitmap b = super.get(key);
+            if (b == null) {
+                Log.d(TAG, "cache/miss");
+                try {
+                    // get bitmap from file system
+                    String url = (String) key;
+                    File f = getFile(url);
+                    if (f.exists()) {
+                        Log.i(TAG, "load barcode from file system..");
+                        b = BitmapFactory.decodeStream(new FileInputStream(f));
+                        if (b != null) {
+                            // save barcode to memory cache
+                            super.put(url, b);
+                        }
+                    }
+                } catch (IOException e) {
+                    Log.e(TAG, "io error", e);
+                }
+            }
+            return b;
+        }
 
-		/**
-		 * Default constructor.
-		 * 
-		 * @param context
-		 *            {@link Context}
-		 * @param textViewResourceId
-		 *            Resource for item views.
-		 */
-		public WifiAdapter(final Context context, // .
-				final int textViewResourceId) {
-			super(context, textViewResourceId);
-		}
+        /**
+         * Load a bitmap from input stream and save it to file.
+         *
+         * @param key url
+         * @param is  {@link InputStream}
+         * @return {@link Bitmap}
+         */
+        public Bitmap put(final String key, final InputStream is) {
+            Log.d(TAG, "cache.put(" + key + ")");
+            if (key == null || is == null) {
+                return null;
+            }
+            // final Bitmap b = BitmapFactory.decodeStream(is);
 
-		@Override
-		public View getView(final int position, final View convertView,
-				final ViewGroup parent) {
-			View v = super.getView(position, convertView, parent);
-			((TextView) v.findViewById(android.R.id.text1)).setText(this
-					.getItem(position).SSID.replaceAll("\"", ""));
-			return v;
-		}
+            // super.put(key, b);
+            // put bitmap to file system
+            File f = getFile(key);
+            Log.i(TAG, "file " + f.getAbsolutePath()
+                    + " does not exist, write it..");
+            try {
+                // f.createNewFile();
+                FileOutputStream os = new FileOutputStream(f);
 
-		@Override
-		public View getDropDownView(final int position, final View convertView,
-				final ViewGroup parent) {
-			View v = super.getDropDownView(position, convertView, parent);
-			((TextView) v.findViewById(android.R.id.text1)).setText(this
-					.getItem(position).SSID.replaceAll("\"", ""));
-			return v;
-		}
+                byte[] buffer = new byte[Utils.K];
+                int l;
+                while ((l = is.read(buffer)) > 0) {
+                    Log.d(TAG, "write bytes: " + l);
+                    os.write(buffer, 0, l);
+                }
+                os.close();
+                Log.d(TAG, "done");
+            } catch (IOException e) {
+                Log.e(TAG, "error writing file: " + f.getAbsolutePath(), e);
+            }
 
-		@Override
-		public void clear() {
-			super.clear();
-			this.passwords.clear();
-		}
+            Bitmap b = BitmapFactory.decodeFile(f.getAbsolutePath());
+            super.put(key, b);
+            return b;
+        }
 
-		/**
-		 * Add a {@link WifiConfiguration} with password.
-		 * 
-		 * @param object
-		 *            {@link WifiConfiguration}
-		 * @param password
-		 *            password
-		 */
-		public void add(final WifiConfiguration object, final String password) {
-			this.add(object);
-			this.passwords.put(object, password);
-		}
+        /**
+         * Get {@link File} object for a barcode's url.
+         *
+         * @param url url
+         * @return {@link File}
+         */
+        private File getFile(final String url) {
+            final String ret = cacheDir
+                    + url.replaceAll(".*chart\\?cht=", "").replaceAll("%", "_")
+                    .replaceAll("\\|", "_").replaceAll("&", "_");
+            Log.d(TAG, "getFile(" + url + "): " + ret);
+            return new File(ret);
+        }
+    }
 
-		/**
-		 * Get password for {@link WifiConfiguration}.
-		 * 
-		 * @param position
-		 *            position
-		 * @return password
-		 */
-		public String getPassword(final int position) {
-			WifiConfiguration wc = this.getItem(position);
-			if (wc == null) {
-				return null;
-			}
-			return this.passwords.get(wc);
-		}
-	}
+    /**
+     * Show wifi configuration as {@link ArrayAdapter}.
+     */
+    private static class WifiAdapter extends ArrayAdapter<WifiConfiguration> {
 
-	/**
-	 * Load barcodes in background.
-	 */
-	private class BarcodeLoader extends AsyncTask<String, Void, Exception> {
+        /**
+         * Passwords.
+         */
+        private final HashMap<WifiConfiguration, String> passwords = // .
+                new HashMap<>();
 
-		@Override
-		protected Exception doInBackground(final String... url) {
-			DefaultHttpClient httpClient = new DefaultHttpClient();
-			for (String u : url) {
-				try {
-					Log.d(TAG, "load barcode: " + u);
-					HttpResponse repsonse = httpClient.execute(new HttpGet(u));
-					if (repsonse.getStatusLine().getStatusCode() == // .
-					HttpStatus.SC_OK) {
-						WifiBarcodeActivity.this.barcodes.put(u, repsonse
-								.getEntity().getContent());
-					}
-				} catch (IOException e) {
-					Log.e(TAG, "error fetching barcode", e);
-					return e;
-				}
-			}
-			return null;
-		}
+        /**
+         * Default constructor.
+         *
+         * @param context            {@link Context}
+         * @param textViewResourceId Resource for item views.
+         */
+        public WifiAdapter(final Context context, // .
+                final int textViewResourceId) {
+            super(context, textViewResourceId);
+        }
 
-		@Override
-		protected void onPostExecute(final Exception result) {
-			WifiBarcodeActivity.this.showBarcode(true);
-			if (result != null) {
-				Toast.makeText(WifiBarcodeActivity.this, result.toString(),
-						Toast.LENGTH_LONG).show();
-				Toast.makeText(WifiBarcodeActivity.this,
-						R.string.error_get_barcode, Toast.LENGTH_LONG).show();
-			}
-		}
-	}
+        @Override
+        public View getView(final int position, final View convertView,
+                final ViewGroup parent) {
+            View v = super.getView(position, convertView, parent);
+            assert v != null;
+            ((TextView) v.findViewById(android.R.id.text1)).setText(this
+                    .getItem(position).SSID.replaceAll("\"", ""));
+            return v;
+        }
 
-	/**
-	 * Encloses the incoming string inside double quotes, if it isn't already
-	 * quoted.
-	 * 
-	 * @param string
-	 *            : the input string
-	 * @return a quoted string, of the form "input". If the input string is
-	 *         null, it returns null as well.
-	 */
-	private static String convertToQuotedString(final String string) {
-		if (string == null) {
-			return null;
-		}
-		if (TextUtils.isEmpty(string)) {
-			return "";
-		}
-		int lastPos = string.length() - 1;
-		if (lastPos < 0
-				|| (string.charAt(0) == '"' && string.charAt(lastPos) == '"')) {
-			return string;
-		}
-		return '\"' + string + '\"';
-	}
+        @Override
+        public View getDropDownView(final int position, final View convertView,
+                final ViewGroup parent) {
+            View v = super.getDropDownView(position, convertView, parent);
+            assert v != null;
+            ((TextView) v.findViewById(android.R.id.text1)).setText(this
+                    .getItem(position).SSID.replaceAll("\"", ""));
+            return v;
+        }
 
-	/**
-	 * Run command as root.
-	 * 
-	 * @param command
-	 *            command
-	 * @return true, if command was successfully executed
-	 */
-	private static boolean runAsRoot(final String command) {
-		Log.i(TAG, "running command as root: " + command);
-		try {
-			Runtime r = Runtime.getRuntime();
-			Process p = r.exec("su");
-			DataOutputStream d = new DataOutputStream(p.getOutputStream());
-			d.writeBytes(command);
-			d.writeBytes("\nexit\n");
-			d.flush();
-			int retval = p.waitFor();
-			Log.i(TAG, "done");
-			return (retval == 0);
-		} catch (Exception e) {
-			Log.e(TAG, "runAsRoot", e);
-			return false;
-		}
-	}
+        @Override
+        public void clear() {
+            super.clear();
+            passwords.clear();
+        }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void onCreate(final Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		this.setContentView(R.layout.main);
+        /**
+         * Add a {@link WifiConfiguration} with password.
+         *
+         * @param object   {@link WifiConfiguration}
+         * @param password password
+         */
+        public void add(final WifiConfiguration object, final String password) {
+            add(object);
+            passwords.put(object, password);
+        }
 
-		ChangelogHelper.showChangelog(this,
-				this.getString(R.string.changelog_),
-				this.getString(R.string.app_name), R.array.updates, -1);
+        /**
+         * Get password for {@link WifiConfiguration}.
+         *
+         * @param position position
+         * @return password
+         */
+        public String getPassword(final int position) {
+            WifiConfiguration wc = getItem(position);
+            if (wc == null) {
+                return null;
+            }
+            return passwords.get(wc);
+        }
+    }
 
-		if (savedInstanceState != null) {
-			this.gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
-		} else {
-			if (!this.getCacheFile().delete()) {
-				Log.e(TAG, "error deleting file: "
-						+ this.getCacheFile().getAbsolutePath());
-			}
-		}
+    /**
+     * Load barcodes in background.
+     */
+    private class BarcodeLoader extends AsyncTask<String, Void, Exception> {
 
-		this.barcodes = new BarcodeCache(this);
+        @Override
+        protected Exception doInBackground(final String... url) {
+            DefaultHttpClient httpClient = new DefaultHttpClient();
+            for (String u : url) {
+                try {
+                    Log.d(TAG, "load barcode: " + u);
+                    HttpResponse repsonse = httpClient.execute(new HttpGet(u));
+                    if (repsonse.getStatusLine().getStatusCode() == // .
+                            HttpStatus.SC_OK) {
+                        WifiBarcodeActivity.this.barcodes.put(u, repsonse
+                                .getEntity().getContent());
+                    }
+                } catch (IOException e) {
+                    Log.e(TAG, "error fetching barcode", e);
+                    return e;
+                }
+            }
+            return null;
+        }
 
-		WifiAdapter adapter = new WifiAdapter(this,
-				android.R.layout.simple_spinner_item);
-		adapter.setDropDownViewResource(// .
-		android.R.layout.simple_spinner_dropdown_item);
-		this.findViewById(R.id.add).setOnClickListener(this);
-		this.findViewById(R.id.barcode).setOnClickListener(this);
-		this.mEtSsid = (EditText) this.findViewById(R.id.ssid);
-		this.mEtPassword = (EditText) this.findViewById(R.id.password);
-		this.mSpConfigs = (Spinner) this.findViewById(R.id.configurations);
-		this.mSpNetType = (Spinner) this.findViewById(R.id.networktype);
+        @Override
+        protected void onPostExecute(final Exception result) {
+            WifiBarcodeActivity.this.showBarcode(true);
+            if (result != null) {
+                Toast.makeText(WifiBarcodeActivity.this, result.toString(),
+                        Toast.LENGTH_LONG).show();
+                Toast.makeText(WifiBarcodeActivity.this,
+                        R.string.error_get_barcode, Toast.LENGTH_LONG).show();
+            }
+        }
+    }
 
-		this.mSpConfigs.setAdapter(adapter);
-		this.mSpConfigs.setOnItemSelectedListener(new OnItemSelectedListener() {
-			@Override
-			public void onItemSelected(final AdapterView<?> parent,
-					final View view, final int position, final long id) {
-				if (position == 0) {
-					WifiBarcodeActivity.this.mEtSsid.setText(null);
-					WifiBarcodeActivity.this.mEtSsid.setEnabled(true);
-					WifiBarcodeActivity.this.mSpNetType.setEnabled(true);
-					WifiBarcodeActivity.this.mSpNetType.setSelection(0);
-					WifiBarcodeActivity.this.mEtPassword.setText(null);
-					WifiBarcodeActivity.this.mEtPassword.setEnabled(true);
-				} else {
-					WifiAdapter a = (WifiAdapter) // .
-					WifiBarcodeActivity.this.mSpConfigs.getAdapter();
-					WifiConfiguration wc = a.getItem(position);
-					WifiBarcodeActivity.this.mEtSsid.setText(wc.SSID
-							.replaceAll("\"", ""));
-					WifiBarcodeActivity.this.mEtSsid.setEnabled(false);
-					int i = 0;
-					if (wc.allowedAuthAlgorithms
-							.get(WifiConfiguration.AuthAlgorithm.SHARED)) {
-						i = 1;
-					} else if (wc.allowedKeyManagement
-							.get(WifiConfiguration.KeyMgmt.WPA_PSK)) {
-						i = 2;
-					}
-					WifiBarcodeActivity.this.mSpNetType.setSelection(i);
-					WifiBarcodeActivity.this.mSpNetType.setEnabled(false);
-					String p = a.getPassword(position);
-					WifiBarcodeActivity.this.mEtPassword.setText(p);
-					WifiBarcodeActivity.this.mEtPassword.setEnabled(i != 0
-							&& TextUtils.isEmpty(p));
-				}
-				WifiBarcodeActivity.this.showBarcode(true);
-				WifiBarcodeActivity.this.findViewById(R.id.add).setVisibility(
-						View.GONE);
+    /**
+     * Encloses the incoming string inside double quotes, if it isn't already quoted.
+     *
+     * @param string : the input string
+     * @return a quoted string, of the form "input". If the input string is null, it returns null as
+     * well.
+     */
+    private static String convertToQuotedString(final String string) {
+        if (string == null) {
+            return null;
+        }
+        if (TextUtils.isEmpty(string)) {
+            return "";
+        }
+        int lastPos = string.length() - 1;
+        if (lastPos < 0
+                || (string.charAt(0) == '"' && string.charAt(lastPos) == '"')) {
+            return string;
+        }
+        return '\"' + string + '\"';
+    }
 
-			}
+    /**
+     * Run command as root.
+     *
+     * @param command command
+     * @return true, if command was successfully executed
+     */
+    private static boolean runAsRoot(final String command) {
+        Log.i(TAG, "running command as root: " + command);
+        try {
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec("su");
+            DataOutputStream d = new DataOutputStream(p.getOutputStream());
+            d.writeBytes(command);
+            d.writeBytes("\nexit\n");
+            d.flush();
+            int retval = p.waitFor();
+            Log.i(TAG, "done");
+            return (retval == 0);
+        } catch (Exception e) {
+            Log.e(TAG, "runAsRoot", e);
+            return false;
+        }
+    }
 
-			@Override
-			public void onNothingSelected(final AdapterView<?> parent) {
-				// nothing to do
-			}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
 
-		});
+        ChangelogHelper.showChangelog(this,
+                getString(R.string.changelog_),
+                getString(R.string.app_name), R.array.updates, -1);
 
-		this.mSpNetType.setOnItemSelectedListener(new OnItemSelectedListener() {
-			@Override
-			public void onItemSelected(final AdapterView<?> parent,
-					final View view, final int position, final long id) {
-				String p = WifiBarcodeActivity.this.mEtPassword.getText()
-						.toString();
-				WifiBarcodeActivity.this.mEtPassword.setEnabled(position != 0
-						&& (WifiBarcodeActivity.this.mSpConfigs
-								.getSelectedItemPosition() == 0 || TextUtils
-								.isEmpty(p)));
-			}
+        if (savedInstanceState != null) {
+            gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
+        } else {
+            if (!this.getCacheFile().delete()) {
+                Log.e(TAG, "error deleting file: "
+                        + getCacheFile().getAbsolutePath());
+            }
+        }
 
-			@Override
-			public void onNothingSelected(final AdapterView<?> parent) {
-				// nothing to do
-			}
-		});
+        barcodes = new BarcodeCache(this);
 
-		final int c = this.getResources().getColor(
-				android.R.color.background_light);
-		this.bCBackgroundColor = Integer.toHexString(Color.red(c))
-				+ Integer.toHexString(Color.green(c))
-				+ Integer.toHexString(Color.blue(c));
-		this.bCSize = this.getString(R.string.barcode_size);
-	}
+        WifiAdapter adapter = new WifiAdapter(this,
+                android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(// .
+                android.R.layout.simple_spinner_dropdown_item);
+        findViewById(R.id.add).setOnClickListener(this);
+        findViewById(R.id.barcode).setOnClickListener(this);
+        mEtSsid = (EditText) findViewById(R.id.ssid);
+        mEtPassword = (EditText) findViewById(R.id.password);
+        mSpConfigs = (Spinner) findViewById(R.id.configurations);
+        mSpNetType = (Spinner) findViewById(R.id.networktype);
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void onSaveInstanceState(final Bundle outState) {
-		super.onSaveInstanceState(outState);
-		outState.putBoolean(EXTRA_GOT_ROOT, this.gotRoot);
-	}
+        mSpConfigs.setAdapter(adapter);
+        mSpConfigs.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(final AdapterView<?> parent,
+                    final View view, final int position, final long id) {
+                if (position == 0) {
+                    WifiBarcodeActivity.this.mEtSsid.setText(null);
+                    WifiBarcodeActivity.this.mEtSsid.setEnabled(true);
+                    WifiBarcodeActivity.this.mSpNetType.setEnabled(true);
+                    WifiBarcodeActivity.this.mSpNetType.setSelection(0);
+                    WifiBarcodeActivity.this.mEtPassword.setText(null);
+                    WifiBarcodeActivity.this.mEtPassword.setEnabled(true);
+                } else {
+                    WifiAdapter a = (WifiAdapter) // .
+                            WifiBarcodeActivity.this.mSpConfigs.getAdapter();
+                    WifiConfiguration wc = a.getItem(position);
+                    WifiBarcodeActivity.this.mEtSsid.setText(wc.SSID
+                            .replaceAll("\"", ""));
+                    WifiBarcodeActivity.this.mEtSsid.setEnabled(false);
+                    int i = 0;
+                    if (wc.allowedAuthAlgorithms
+                            .get(WifiConfiguration.AuthAlgorithm.SHARED)) {
+                        i = 1;
+                    } else if (wc.allowedKeyManagement
+                            .get(WifiConfiguration.KeyMgmt.WPA_PSK)) {
+                        i = 2;
+                    }
+                    WifiBarcodeActivity.this.mSpNetType.setSelection(i);
+                    WifiBarcodeActivity.this.mSpNetType.setEnabled(false);
+                    String p = a.getPassword(position);
+                    WifiBarcodeActivity.this.mEtPassword.setText(p);
+                    WifiBarcodeActivity.this.mEtPassword.setEnabled(i != 0
+                            && TextUtils.isEmpty(p));
+                }
+                WifiBarcodeActivity.this.showBarcode(true);
+                WifiBarcodeActivity.this.findViewById(R.id.add).setVisibility(
+                        View.GONE);
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public boolean onCreateOptionsMenu(final Menu menu) {
-		this.getSupportMenuInflater().inflate(R.menu.menu, menu);
-		return true;
-	}
+            }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public boolean onOptionsItemSelected(final MenuItem item) {
-		Log.d(TAG, "onOptionsItemSelected(" + item.getItemId() + ")");
-		switch (item.getItemId()) {
-		case R.id.item_generate:
-			this.showBarcode(false);
-			return true;
-		case R.id.item_wifi_config:
-			this.startActivity(new Intent("android.settings.WIFI_SETTINGS"));
-			return true;
-		case R.id.item_scan:
-			try {
-				Intent intent = new Intent(
-						"com.google.zxing.client.android.SCAN");
-				// intent.setPackage("com.google.zxing.client.android");
-				intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
-				this.startActivityForResult(intent, 0);
-			} catch (ActivityNotFoundException e) {
-				Log.e(TAG, "failed launching scanner", e);
-				Builder b = new Builder(this);
-				b.setTitle(R.string.install_barcode_scanner_);
-				b.setMessage(R.string.install_barcode_scanner_hint);
-				b.setNegativeButton(android.R.string.cancel, null);
-				b.setPositiveButton(R.string.install,
-						new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(final DialogInterface dialog,
-									final int which) {
-								Market.installApp(WifiBarcodeActivity.this,
-										"com.google.zxing" + ".client.android",
-										"http://code.google.com/p"
-												+ "/zxing/downloads/list");
-							}
-						});
-				b.show();
-			}
-			return true;
-		case R.id.item_about:
-			this.startActivity(new Intent(this, About.class));
-			return true;
-		case R.id.item_more_apps:
-			Market.searchMoreApps(this);
-			return true;
-		default:
-			return false;
-		}
-	}
+            @Override
+            public void onNothingSelected(final AdapterView<?> parent) {
+                // nothing to do
+            }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void onActivityResult(final int requestCode, final int resultCode,
-			final Intent intent) {
-		if (requestCode == 0) {
-			if (resultCode == RESULT_OK) {
-				final String contents = intent.getStringExtra("SCAN_RESULT");
-				Log.d(TAG, "got qr code: " + contents);
-				this.parseResult(contents);
-			}
-		}
-	}
+        });
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void onClick(final View v) {
-		switch (v.getId()) {
-		case R.id.add:
-			this.addWifi();
-			break;
-		case R.id.barcode:
-			final String url = this.getUrl();
-			final Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url),
-					this, ViewerActivity.class);
-			i.putExtra(EXTRA_BARCODE, this.barcodes.get(url));
-			i.putExtra(EXTRA_TITLE, this.mEtSsid.getText().toString());
-			this.startActivity(i);
-			break;
-		default:
-			break;
-		}
-	}
+        mSpNetType.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(final AdapterView<?> parent,
+                    final View view, final int position, final long id) {
+                //noinspection ConstantConditions
+                String p = WifiBarcodeActivity.this.mEtPassword.getText()
+                        .toString();
+                WifiBarcodeActivity.this.mEtPassword.setEnabled(position != 0
+                        && (WifiBarcodeActivity.this.mSpConfigs
+                        .getSelectedItemPosition() == 0 || TextUtils
+                        .isEmpty(p)));
+            }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void onResume() {
-		super.onResume();
-		this.loadWifiConfigurations();
-	}
+            @Override
+            public void onNothingSelected(final AdapterView<?> parent) {
+                // nothing to do
+            }
+        });
 
-	/**
-	 * Load wifi configurations.
-	 */
-	private void loadWifiConfigurations() {
-		WifiAdapter adapter = (WifiAdapter) this.mSpConfigs.getAdapter();
-		WifiManager wm = (WifiManager) this.getSystemService(WIFI_SERVICE);
-		List<WifiConfiguration> wcs = wm.getConfiguredNetworks();
-		WifiConfiguration custom = new WifiConfiguration();
-		custom.SSID = this.getString(R.string.custom);
-		adapter.clear();
-		adapter.add(custom);
-		this.flushWifiPasswords();
-		if (wcs != null) {
-			for (WifiConfiguration wc : wcs) {
-				adapter.add(wc, this.getWifiPassword(wc));
-			}
-		}
-	}
+        final int c = getResources().getColor(
+                android.R.color.background_light);
+        bCBackgroundColor = Integer.toHexString(Color.red(c))
+                + Integer.toHexString(Color.green(c))
+                + Integer.toHexString(Color.blue(c));
+        bCSize = getString(R.string.barcode_size);
+    }
 
-	/**
-	 * Add wifi configuration.
-	 */
-	private void addWifi() {
-		WifiConfiguration wc = new WifiConfiguration();
-		wc.allowedAuthAlgorithms.clear();
-		wc.allowedGroupCiphers.clear();
-		wc.allowedKeyManagement.clear();
-		wc.allowedPairwiseCiphers.clear();
-		wc.allowedProtocols.clear();
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void onSaveInstanceState(final Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(EXTRA_GOT_ROOT, gotRoot);
+    }
 
-		wc.SSID = convertToQuotedString(this.mEtSsid.getText().toString());
-		wc.hiddenSSID = true;
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+        getSupportMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
 
-		String password = this.mEtPassword.getText().toString();
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        Log.d(TAG, "onOptionsItemSelected(" + item.getItemId() + ")");
+        switch (item.getItemId()) {
+            case R.id.item_generate:
+                showBarcode(false);
+                return true;
+            case R.id.item_wifi_config:
+                startActivity(new Intent("android.settings.WIFI_SETTINGS"));
+                return true;
+            case R.id.item_scan:
+                try {
+                    Intent intent = new Intent(
+                            "com.google.zxing.client.android.SCAN");
+                    // intent.setPackage("com.google.zxing.client.android");
+                    intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+                    startActivityForResult(intent, 0);
+                } catch (ActivityNotFoundException e) {
+                    Log.e(TAG, "failed launching scanner", e);
+                    Builder b = new Builder(this);
+                    b.setTitle(R.string.install_barcode_scanner_);
+                    b.setMessage(R.string.install_barcode_scanner_hint);
+                    b.setNegativeButton(android.R.string.cancel, null);
+                    b.setPositiveButton(R.string.install,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(final DialogInterface dialog,
+                                        final int which) {
+                                    Market.installApp(WifiBarcodeActivity.this,
+                                            "com.google.zxing" + ".client.android",
+                                            "http://code.google.com/p"
+                                                    + "/zxing/downloads/list"
+                                    );
+                                }
+                            }
+                    );
+                    b.show();
+                }
+                return true;
+            case R.id.item_about:
+                startActivity(new Intent(this, About.class));
+                return true;
+            case R.id.item_more_apps:
+                Market.searchMoreApps(this);
+                return true;
+            default:
+                return false;
+        }
+    }
 
-		switch (this.mSpNetType.getSelectedItemPosition()) {
-		case 1: // WEP
-			wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-			wc.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
-			wc.allowedAuthAlgorithms
-					.set(WifiConfiguration.AuthAlgorithm.SHARED);
-			int length = password.length();
-			// WEP-40, WEP-104, and 256-bit WEP (WEP-232?)
-			if ((length == 10 || length == 26 || length == 58)
-					&& password.matches("[0-9A-Fa-f]*")) {
-				wc.wepKeys[0] = password;
-			} else {
-				wc.wepKeys[0] = '"' + password + '"';
-			}
-			break;
-		case 2: // WPA
-			wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-			if (password.matches("[0-9A-Fa-f]{64}")) {
-				wc.preSharedKey = password;
-			} else {
-				wc.preSharedKey = '"' + password + '"';
-			}
-			break;
-		default: // OPEN
-			wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-			break;
-		}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onActivityResult(final int requestCode, final int resultCode,
+            final Intent intent) {
+        if (requestCode == 0) {
+            if (resultCode == RESULT_OK) {
+                final String contents = intent.getStringExtra("SCAN_RESULT");
+                Log.d(TAG, "got qr code: " + contents);
+                parseResult(contents);
+            }
+        }
+    }
 
-		WifiManager wm = (WifiManager) this.getSystemService(WIFI_SERVICE);
-		int netId = wm.addNetwork(wc);
-		int msg;
-		final boolean ret = wm.saveConfiguration();
-		if (ret) {
-			wm.enableNetwork(netId, false);
-			msg = R.string.wifi_added;
-		} else {
-			msg = R.string.wifi_failed;
-		}
-		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onClick(final View v) {
+        switch (v.getId()) {
+            case R.id.add:
+                addWifi();
+                break;
+            case R.id.barcode:
+                final String url = getUrl();
+                final Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url),
+                        this, ViewerActivity.class);
+                i.putExtra(EXTRA_BARCODE, barcodes.get(url));
+                //noinspection ConstantConditions
+                i.putExtra(EXTRA_TITLE, mEtSsid.getText().toString());
+                startActivity(i);
+                break;
+            default:
+                break;
+        }
+    }
 
-	/**
-	 * Parse result from QR Code.
-	 * 
-	 * @param result
-	 *            content from qr code
-	 */
-	private void parseResult(final String result) {
-		Log.d(TAG, "parseResult(" + result + ")");
-		if (result == null || !result.startsWith("WIFI:")) {
-			Log.e(TAG, "error parsing result: " + result);
-			Toast.makeText(this, R.string.error_read_barcode, Toast.LENGTH_LONG)
-					.show();
-			return;
-		}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadWifiConfigurations();
+    }
 
-		String[] c = result.substring("WIFI:".length()).split(";", 3);
-		for (String line : c) {
-			if (line.startsWith("S:")) {
-				this.mEtSsid.setText(line.substring(2));
-			} else if (line.startsWith("T:NOPASS")) {
-				this.mSpNetType.setSelection(0);
-			} else if (line.startsWith("T:WEP")) {
-				this.mSpNetType.setSelection(1);
-			} else if (line.startsWith("T:WPA")) {
-				this.mSpNetType.setSelection(2);
-			} else if (line.startsWith("P:")) {
-				this.mEtPassword.setText(line.substring(2).replaceAll(";?;$",
-						""));
-			}
-		}
+    /**
+     * Load wifi configurations.
+     */
+    private void loadWifiConfigurations() {
+        WifiAdapter adapter = (WifiAdapter) mSpConfigs.getAdapter();
+        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+        List<WifiConfiguration> wcs = wm.getConfiguredNetworks();
+        WifiConfiguration custom = new WifiConfiguration();
+        custom.SSID = getString(R.string.custom);
+        adapter.clear();
+        adapter.add(custom);
+        flushWifiPasswords();
+        if (wcs != null) {
+            for (WifiConfiguration wc : wcs) {
+                adapter.add(wc, getWifiPassword(wc));
+            }
+        }
+    }
 
-		this.mSpConfigs.setSelection(0);
+    /**
+     * Add wifi configuration.
+     */
+    private void addWifi() {
+        WifiConfiguration wc = new WifiConfiguration();
+        wc.allowedAuthAlgorithms.clear();
+        wc.allowedGroupCiphers.clear();
+        wc.allowedKeyManagement.clear();
+        wc.allowedPairwiseCiphers.clear();
+        wc.allowedProtocols.clear();
 
-		this.findViewById(R.id.add).setVisibility(View.VISIBLE);
-	}
+        //noinspection ConstantConditions
+        wc.SSID = convertToQuotedString(mEtSsid.getText().toString());
+        wc.hiddenSSID = true;
 
-	/**
-	 * Flush wifi password cache.
-	 */
-	private void flushWifiPasswords() {
-		final String targetFile = this.getCacheDir().getAbsolutePath()
-				+ "/wpa_supplicant.conf";
-		File f = new File(targetFile);
-		if (f.exists()) {
-			f.delete();
-		}
-	}
+        //noinspection ConstantConditions
+        String password = mEtPassword.getText().toString();
 
-	/**
-	 * @return file holding cached wpa_supplicant.conf.
-	 */
-	private File getCacheFile() {
-		return new File(this.getCacheDir(), "wpa_supplicant.conf");
-	}
+        switch (mSpNetType.getSelectedItemPosition()) {
+            case 1: // WEP
+                wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+                wc.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
+                wc.allowedAuthAlgorithms
+                        .set(WifiConfiguration.AuthAlgorithm.SHARED);
+                int length = password.length();
+                // WEP-40, WEP-104, and 256-bit WEP (WEP-232?)
+                if ((length == 10 || length == 26 || length == 58)
+                        && password.matches("[0-9A-Fa-f]*")) {
+                    wc.wepKeys[0] = password;
+                } else {
+                    wc.wepKeys[0] = '"' + password + '"';
+                }
+                break;
+            case 2: // WPA
+                wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+                if (password.matches("[0-9A-Fa-f]{64}")) {
+                    wc.preSharedKey = password;
+                } else {
+                    wc.preSharedKey = '"' + password + '"';
+                }
+                break;
+            default: // OPEN
+                wc.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+                break;
+        }
 
-	/**
-	 * Get WiFi password.
-	 * 
-	 * @param wc
-	 *            {@link WifiConfiguration}
-	 * @return password
-	 */
-	private String getWifiPassword(final WifiConfiguration wc) {
-		Log.d(TAG, "getWifiPassword(" + wc + ")");
-		File f = this.getCacheFile();
-		if (!f.exists()) {
-			if (this.gotRoot) {
-				final String command = "cat /data/misc/wifi/wpa_supplicant.conf"
-						+ " > "
-						+ f.getAbsolutePath()
-						+ "\n chmod 666 "
-						+ f.getAbsolutePath();
-				if (!runAsRoot(command)) {
-					Toast.makeText(this, R.string.error_need_root,
-							Toast.LENGTH_LONG).show();
-					this.gotRoot = false;
-					return null;
-				}
-			} else {
-				Log.w(TAG, "gotRoot=false");
-				return null;
-			}
-		}
-		f = new File(f.getAbsolutePath());
-		if (!f.exists()) {
-			Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG)
-					.show();
-			return null;
-		}
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(f));
-			String l;
-			StringBuffer sb = new StringBuffer();
-			while ((l = br.readLine()) != null) {
-				if (l.startsWith("network=") || l.equals("}")) {
-					String config = sb.toString();
-					// parse it
-					if (config.contains("ssid=" + wc.SSID)) {
-						Log.d(TAG, "wifi config:");
-						Log.d(TAG, config);
-						int i = config.indexOf("wep_key0=");
-						int len;
-						if (i < 0) {
-							i = config.indexOf("psk=");
-							len = "psk=".length();
-						} else {
-							len = "wep_key0=".length();
-						}
-						if (i < 0) {
-							return null;
-						}
+        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+        int netId = wm.addNetwork(wc);
+        int msg;
+        final boolean ret = wm.saveConfiguration();
+        if (ret) {
+            wm.enableNetwork(netId, false);
+            msg = R.string.wifi_added;
+        } else {
+            msg = R.string.wifi_failed;
+        }
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+    }
 
-						return config.substring(i + len + 1,
-								config.indexOf("\n", i) - 1);
+    /**
+     * Parse result from QR Code.
+     *
+     * @param result content from qr code
+     */
+    private void parseResult(final String result) {
+        Log.d(TAG, "parseResult(" + result + ")");
+        if (result == null || !result.startsWith("WIFI:")) {
+            Log.e(TAG, "error parsing result: " + result);
+            Toast.makeText(this, R.string.error_read_barcode, Toast.LENGTH_LONG)
+                    .show();
+            return;
+        }
 
-					}
-					sb = new StringBuffer();
-				}
-				sb.append(l + "\n");
-			}
-			br.close();
-		} catch (IOException e) {
-			Log.e(TAG, "error reading file", e);
-			Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG)
-					.show();
-			return null;
-		}
-		return null;
-	}
+        String[] c = result.substring("WIFI:".length()).split(";", 3);
+        for (String line : c) {
+            if (line.startsWith("S:")) {
+                mEtSsid.setText(line.substring(2));
+            } else if (line.startsWith("T:NOPASS")) {
+                mSpNetType.setSelection(0);
+            } else if (line.startsWith("T:WEP")) {
+                mSpNetType.setSelection(1);
+            } else if (line.startsWith("T:WPA")) {
+                mSpNetType.setSelection(2);
+            } else if (line.startsWith("P:")) {
+                mEtPassword.setText(line.substring(2).replaceAll(";?;$",
+                        ""));
+            }
+        }
 
-	/**
-	 * Get current BarCode's URL.
-	 * 
-	 * @return URL
-	 */
-	private String getUrl() {
-		String url = "http://chart.apis.google.com/" + "chart?cht=qr&chs="
-				+ this.bCSize + "&chld=2&chf=bg,s," + this.bCBackgroundColor
-				+ "&chl=";
-		int type = this.mSpNetType.getSelectedItemPosition();
-		String[] types = this.getResources().getStringArray(
-				R.array.networktypes);
-		StringBuffer sb = new StringBuffer();
-		sb.append("WIFI:T:");
-		sb.append(types[type]);
-		sb.append(";S:");
-		sb.append(this.mEtSsid.getText());
-		sb.append(";P:");
-		if (type == 0) {
-			sb.append("nopass");
-		} else {
-			sb.append(this.mEtPassword.getText());
-		}
-		sb.append(";;");
-		try {
-			url += URLEncoder.encode(sb.toString(), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			Log.e(TAG, "error url encoding barcode");
-		}
-		return url;
-	}
+        mSpConfigs.setSelection(0);
 
-	/**
-	 * Show barcode.
-	 * 
-	 * @param cacheOnly
-	 *            load only from cache
-	 */
-	private void showBarcode(final boolean cacheOnly) {
-		final String url = this.getUrl();
-		if (!cacheOnly && !this.barcodes.containsKey(url)) {
-			Log.i(TAG, "barcode not available, load it...");
-			BarcodeLoader loader = new BarcodeLoader();
-			loader.execute(url);
-		}
-		ImageView iv = (ImageView) this.findViewById(R.id.barcode);
-		Bitmap bc = this.barcodes.get(url);
-		if (bc != null) {
-			iv.setImageBitmap(bc);
-			iv.setVisibility(View.VISIBLE);
-			this.findViewById(R.id.c2e).setVisibility(View.VISIBLE);
-			this.findViewById(R.id.progress).setVisibility(View.GONE);
-		} else {
-			iv.setVisibility(View.GONE);
-			this.findViewById(R.id.c2e).setVisibility(View.GONE);
-			if (!cacheOnly) {
-				this.findViewById(R.id.progress).setVisibility(View.VISIBLE);
-			}
-		}
-		if (cacheOnly) {
-			this.findViewById(R.id.progress).setVisibility(View.GONE);
-		}
-	}
+        findViewById(R.id.add).setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * Flush wifi password cache.
+     */
+    private void flushWifiPasswords() {
+        //noinspection ConstantConditions
+        final String targetFile = getCacheDir().getAbsolutePath()
+                + "/wpa_supplicant.conf";
+        File f = new File(targetFile);
+        if (f.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            f.delete();
+        }
+    }
+
+    /**
+     * @return file holding cached wpa_supplicant.conf.
+     */
+    private File getCacheFile() {
+        return new File(getCacheDir(), "wpa_supplicant.conf");
+    }
+
+    /**
+     * Get WiFi password.
+     *
+     * @param wc {@link WifiConfiguration}
+     * @return password
+     */
+    private String getWifiPassword(final WifiConfiguration wc) {
+        Log.d(TAG, "getWifiPassword(" + wc + ")");
+        File f = getCacheFile();
+        if (!f.exists()) {
+            if (gotRoot) {
+                final String command = "cat /data/misc/wifi/wpa_supplicant.conf"
+                        + " > "
+                        + f.getAbsolutePath()
+                        + "\n chmod 666 "
+                        + f.getAbsolutePath();
+                if (!runAsRoot(command)) {
+                    Toast.makeText(this, R.string.error_need_root,
+                            Toast.LENGTH_LONG).show();
+                    gotRoot = false;
+                    return null;
+                }
+            } else {
+                Log.w(TAG, "gotRoot=false");
+                return null;
+            }
+        }
+        f = new File(f.getAbsolutePath());
+        if (!f.exists()) {
+            Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG)
+                    .show();
+            return null;
+        }
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(f));
+            String l;
+            StringBuffer sb = new StringBuffer();
+            while ((l = br.readLine()) != null) {
+                if (l.startsWith("network=") || l.equals("}")) {
+                    String config = sb.toString();
+                    // parse it
+                    if (config.contains("ssid=" + wc.SSID)) {
+                        Log.d(TAG, "wifi config:");
+                        Log.d(TAG, config);
+                        int i = config.indexOf("wep_key0=");
+                        int len;
+                        if (i < 0) {
+                            i = config.indexOf("psk=");
+                            len = "psk=".length();
+                        } else {
+                            len = "wep_key0=".length();
+                        }
+                        if (i < 0) {
+                            return null;
+                        }
+
+                        return config.substring(i + len + 1,
+                                config.indexOf("\n", i) - 1);
+
+                    }
+                    sb = new StringBuffer();
+                }
+                sb.append(l).append("\n");
+            }
+            br.close();
+        } catch (IOException e) {
+            Log.e(TAG, "error reading file", e);
+            Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG)
+                    .show();
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * Get current BarCode's URL.
+     *
+     * @return URL
+     */
+    private String getUrl() {
+        String url = "http://chart.apis.google.com/" + "chart?cht=qr&chs="
+                + bCSize + "&chld=2&chf=bg,s," + bCBackgroundColor
+                + "&chl=";
+        int type = mSpNetType.getSelectedItemPosition();
+        String[] types = getResources().getStringArray(
+                R.array.networktypes);
+        StringBuilder sb = new StringBuilder();
+        sb.append("WIFI:T:");
+        sb.append(types[type]);
+        sb.append(";S:");
+        sb.append(mEtSsid.getText());
+        sb.append(";P:");
+        if (type == 0) {
+            sb.append("nopass");
+        } else {
+            sb.append(mEtPassword.getText());
+        }
+        sb.append(";;");
+        try {
+            url += URLEncoder.encode(sb.toString(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            Log.e(TAG, "error url encoding barcode");
+        }
+        return url;
+    }
+
+    /**
+     * Show barcode.
+     *
+     * @param cacheOnly load only from cache
+     */
+    private void showBarcode(final boolean cacheOnly) {
+        final String url = getUrl();
+        if (!cacheOnly && !this.barcodes.containsKey(url)) {
+            Log.i(TAG, "barcode not available, load it...");
+            BarcodeLoader loader = new BarcodeLoader();
+            loader.execute(url);
+        }
+        ImageView iv = (ImageView) findViewById(R.id.barcode);
+        Bitmap bc = barcodes.get(url);
+        if (bc != null) {
+            iv.setImageBitmap(bc);
+            iv.setVisibility(View.VISIBLE);
+            findViewById(R.id.c2e).setVisibility(View.VISIBLE);
+            findViewById(R.id.progress).setVisibility(View.GONE);
+        } else {
+            iv.setVisibility(View.GONE);
+            findViewById(R.id.c2e).setVisibility(View.GONE);
+            if (!cacheOnly) {
+                findViewById(R.id.progress).setVisibility(View.VISIBLE);
+            }
+        }
+        if (cacheOnly) {
+            findViewById(R.id.progress).setVisibility(View.GONE);
+        }
+    }
 }

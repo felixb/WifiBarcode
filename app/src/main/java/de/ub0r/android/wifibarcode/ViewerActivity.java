@@ -28,49 +28,50 @@ import android.widget.ImageView;
 
 /**
  * Show a barcode in full screen.
- * 
+ *
  * @author flx
  */
 public final class ViewerActivity extends SherlockActivity {
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void onCreate(final Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		this.setContentView(R.layout.viewer);
-		this.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void onResume() {
-		super.onResume();
-		final Intent i = this.getIntent();
-		Bitmap bitmap = i.getParcelableExtra(WifiBarcodeActivity.EXTRA_BARCODE);
-		if (bitmap == null) {
-			this.finish();
-		} else {
-			ImageView iv = (ImageView) this.findViewById(R.id.barcode);
-			iv.setImageBitmap(bitmap);
-			String s = i.getStringExtra(WifiBarcodeActivity.EXTRA_TITLE);
-			this.getSupportActionBar().setSubtitle(s);
-		}
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.viewer);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public boolean onOptionsItemSelected(final MenuItem item) {
-		switch (item.getItemId()) {
-		case android.R.id.home:
-			this.finish();
-			return true;
-		default:
-			return false;
-		}
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        final Intent i = getIntent();
+        Bitmap bitmap = i.getParcelableExtra(WifiBarcodeActivity.EXTRA_BARCODE);
+        if (bitmap == null) {
+            finish();
+        } else {
+            ImageView iv = (ImageView) findViewById(R.id.barcode);
+            iv.setImageBitmap(bitmap);
+            String s = i.getStringExtra(WifiBarcodeActivity.EXTRA_TITLE);
+            getSupportActionBar().setSubtitle(s);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+            default:
+                return false;
+        }
+    }
 }
