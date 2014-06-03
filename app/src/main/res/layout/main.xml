@@ -1,57 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-	<!--
-		Copyright (C) 2011 Felix Bechstein
-	-->
-	<!--
-		This file is part of WifiBarcode. This program is free software; you
-		can redistribute it and/or modify it under the terms of the GNU
-		General Public License as published by the Free Software Foundation;
-		either version 3 of the License, or (at your option) any later
-		version.
-	-->
-	<!--
-		This program is distributed in the hope that it will be useful, but
-		WITHOUT ANY WARRANTY; without even the implied warranty of
-		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-		General Public License for more details. You should have received a
-		copy of the GNU General Public License along with this program; If
-		not, see <http://www.gnu.org/licenses/>.
-	-->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent" android:layout_height="fill_parent">
-	<LinearLayout android:orientation="vertical"
-		android:layout_width="fill_parent" android:layout_height="fill_parent">
-		<Spinner android:id="@+id/configurations"
-			android:layout_height="wrap_content" android:layout_width="fill_parent" />
-		<TextView android:layout_width="fill_parent"
-			android:layout_height="wrap_content" android:text="@string/ssid" />
-		<EditText android:id="@+id/ssid" android:layout_height="wrap_content"
-			android:layout_width="fill_parent" />
-		<TextView android:layout_width="fill_parent"
-			android:layout_height="wrap_content" android:text="@string/networktype" />
-		<Spinner android:id="@+id/networktype" android:layout_height="wrap_content"
-			android:layout_width="fill_parent" android:entries="@array/networktypes_"
-			android:entryValues="@array/networktypes" />
-		<TextView android:layout_width="fill_parent"
-			android:layout_height="wrap_content" android:text="@string/password" />
-		<EditText android:id="@+id/password" android:layout_height="wrap_content"
-			android:layout_width="fill_parent" />
-		<Button android:id="@+id/add" android:layout_height="wrap_content"
-			android:layout_width="fill_parent" android:text="@string/add"
-			android:visibility="gone" />
-		<RelativeLayout android:layout_width="fill_parent"
-			android:layout_height="fill_parent">
-			<ImageView android:id="@+id/barcode" android:layout_height="fill_parent"
-				android:layout_width="fill_parent" android:scaleType="fitCenter"
-				android:visibility="gone" android:layout_centerInParent="true" />
-			<ProgressBar android:id="@+id/progress"
-				android:layout_height="wrap_content" android:layout_width="wrap_content"
-				android:visibility="gone" android:layout_centerInParent="true" />
-			<TextView android:id="@+id/c2e" android:layout_height="wrap_content"
-				android:layout_width="wrap_content" android:text="@string/click_to_enlarge"
-				android:layout_alignParentBottom="true"
-				android:layout_centerHorizontal="true" android:textColor="#EF000000"
-				android:visibility="gone" />
-		</RelativeLayout>
-	</LinearLayout>
+<!--
+    Copyright (C) 2011 Felix Bechstein
+-->
+<!--
+    This file is part of WifiBarcode. This program is free software; you
+    can redistribute it and/or modify it under the terms of the GNU
+    General Public License as published by the Free Software Foundation;
+    either version 3 of the License, or (at your option) any later
+    version.
+-->
+<!--
+    This program is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+    General Public License for more details. You should have received a
+    copy of the GNU General Public License along with this program; If
+    not, see <http://www.gnu.org/licenses/>.
+-->
+<ScrollView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:padding="@dimen/padding_default">
+    <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+        <Spinner
+                android:id="@+id/configurations"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"/>
+        <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ssid"/>
+        <EditText
+                android:id="@+id/ssid"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:inputType="textNoSuggestions"/>
+        <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/networktype"/>
+        <Spinner
+                android:id="@+id/networktype"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:entries="@array/networktypes_"
+                android:entryValues="@array/networktypes"/>
+        <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/password"/>
+        <EditText
+                android:id="@+id/password"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:inputType="textVisiblePassword"/>
+        <Button android:id="@+id/add"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:text="@string/add"
+                android:visibility="gone"/>
+        <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="@dimen/padding_default">
+            <ImageView android:id="@+id/barcode"
+                       android:layout_height="fill_parent"
+                       android:layout_width="fill_parent"
+                       android:scaleType="fitCenter"
+                       android:visibility="gone"
+                       android:layout_centerInParent="true"/>
+            <ProgressBar
+                    android:id="@+id/progress"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:visibility="gone"
+                    android:layout_centerInParent="true"/>
+            <TextView
+                    android:id="@+id/c2e"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_margin="@dimen/padding_default"
+                    android:text="@string/click_to_enlarge"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"
+                    android:textColor="#EF000000"
+                    android:visibility="gone"/>
+        </RelativeLayout>
+    </LinearLayout>
 </ScrollView>
