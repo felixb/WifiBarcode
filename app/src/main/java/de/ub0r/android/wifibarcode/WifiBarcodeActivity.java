@@ -163,10 +163,10 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 
         @Override
         public Bitmap get(final Object key) {
-            Log.d(TAG, "cache.get(" + key + ")");
+            Log.d(TAG, "cache.get(", key, ")");
             Bitmap b = super.get(key);
             if (b == null) {
-                Log.d(TAG, "cache/miss");
+                Log.v(TAG, "cache/miss");
                 try {
                     // get bitmap from file system
                     String url = (String) key;
@@ -194,7 +194,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
          * @return {@link Bitmap}
          */
         public Bitmap put(final String key, final InputStream is) {
-            Log.d(TAG, "cache.put(" + key + ")");
+            Log.d(TAG, "cache.put(", key, ")");
             if (key == null || is == null) {
                 return null;
             }
@@ -203,8 +203,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             // super.put(key, b);
             // put bitmap to file system
             File f = getFile(key);
-            Log.i(TAG, "file " + f.getAbsolutePath()
-                    + " does not exist, write it..");
+            Log.i(TAG, "file ", f.getAbsolutePath(), " does not exist, write it..");
             try {
                 // f.createNewFile();
                 FileOutputStream os = new FileOutputStream(f);
@@ -212,13 +211,13 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                 byte[] buffer = new byte[Utils.K];
                 int l;
                 while ((l = is.read(buffer)) > 0) {
-                    Log.d(TAG, "write bytes: " + l);
+                    Log.d(TAG, "write bytes: ", l);
                     os.write(buffer, 0, l);
                 }
                 os.close();
                 Log.d(TAG, "done");
             } catch (IOException e) {
-                Log.e(TAG, "error writing file: " + f.getAbsolutePath(), e);
+                Log.e(TAG, "error writing file: ", f.getAbsolutePath(), e);
             }
 
             Bitmap b = BitmapFactory.decodeFile(f.getAbsolutePath());
@@ -236,7 +235,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             final String ret = cacheDir
                     + url.replaceAll(".*chart\\?cht=", "").replaceAll("%", "_")
                     .replaceAll("\\|", "_").replaceAll("&", "_");
-            Log.d(TAG, "getFile(" + url + "): " + ret);
+            Log.d(TAG, "getFile(", url, "): ", ret);
             return new File(ret);
         }
     }
@@ -325,7 +324,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             DefaultHttpClient httpClient = new DefaultHttpClient();
             for (String u : url) {
                 try {
-                    Log.d(TAG, "load barcode: " + u);
+                    Log.d(TAG, "load barcode: ", u);
                     HttpResponse repsonse = httpClient.execute(new HttpGet(u));
                     if (repsonse.getStatusLine().getStatusCode() == // .
                             HttpStatus.SC_OK) {
@@ -381,7 +380,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      * @return true, if command was successfully executed
      */
     private static boolean runAsRoot(final String command) {
-        Log.i(TAG, "running command as root: " + command);
+        Log.i(TAG, "running command as root: ", command);
         try {
             Runtime r = Runtime.getRuntime();
             Process p = r.exec("su");
@@ -414,8 +413,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
         } else {
             if (!this.getCacheFile().delete()) {
-                Log.e(TAG, "error deleting file: "
-                        + getCacheFile().getAbsolutePath());
+                Log.e(TAG, "error deleting file: ", getCacheFile().getAbsolutePath());
             }
         }
 
@@ -529,7 +527,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      */
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
-        Log.d(TAG, "onOptionsItemSelected(" + item.getItemId() + ")");
+        Log.d(TAG, "onOptionsItemSelected(", item.getItemId(), ")");
         switch (item.getItemId()) {
             case R.id.item_generate:
                 showBarcode(false);
@@ -586,7 +584,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         if (requestCode == 0) {
             if (resultCode == RESULT_OK) {
                 final String contents = intent.getStringExtra("SCAN_RESULT");
-                Log.d(TAG, "got qr code: " + contents);
+                Log.d(TAG, "got qr code: ", contents);
                 parseResult(contents);
             }
         }
@@ -708,9 +706,9 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      * @param result content from qr code
      */
     private void parseResult(final String result) {
-        Log.d(TAG, "parseResult(" + result + ")");
+        Log.d(TAG, "parseResult(", result, ")");
         if (result == null || !result.startsWith("WIFI:")) {
-            Log.e(TAG, "error parsing result: " + result);
+            Log.e(TAG, "error parsing result: ", result);
             Toast.makeText(this, R.string.error_read_barcode, Toast.LENGTH_LONG)
                     .show();
             return;
@@ -765,7 +763,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      * @return password
      */
     private String getWifiPassword(final WifiConfiguration wc) {
-        Log.d(TAG, "getWifiPassword(" + wc + ")");
+        Log.d(TAG, "getWifiPassword(", wc, ")");
         File f = getCacheFile();
         if (!f.exists()) {
             if (gotRoot) {
