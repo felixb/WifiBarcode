@@ -248,8 +248,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         /**
          * Passwords.
          */
-        private final HashMap<WifiConfiguration, String> passwords = // .
-                new HashMap<>();
+        private final HashMap<WifiConfiguration, String> passwords = new HashMap<>();
 
         /**
          * Default constructor.
@@ -257,14 +256,12 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
          * @param context            {@link Context}
          * @param textViewResourceId Resource for item views.
          */
-        public WifiAdapter(final Context context, // .
-                final int textViewResourceId) {
+        public WifiAdapter(final Context context, final int textViewResourceId) {
             super(context, textViewResourceId);
         }
 
         @Override
-        public View getView(final int position, final View convertView,
-                final ViewGroup parent) {
+        public View getView(final int position, final View convertView, final ViewGroup parent) {
             View v = super.getView(position, convertView, parent);
             assert v != null;
             ((TextView) v.findViewById(android.R.id.text1)).setText(this
@@ -326,8 +323,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                 try {
                     Log.d(TAG, "load barcode: ", u);
                     HttpResponse repsonse = httpClient.execute(new HttpGet(u));
-                    if (repsonse.getStatusLine().getStatusCode() == // .
-                            HttpStatus.SC_OK) {
+                    if (repsonse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                         WifiBarcodeActivity.this.barcodes.put(u, repsonse
                                 .getEntity().getContent());
                     }
@@ -419,10 +415,8 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 
         barcodes = new BarcodeCache(this);
 
-        WifiAdapter adapter = new WifiAdapter(this,
-                android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(// .
-                android.R.layout.simple_spinner_dropdown_item);
+        WifiAdapter adapter = new WifiAdapter(this, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         findViewById(R.id.add).setOnClickListener(this);
         findViewById(R.id.barcode).setOnClickListener(this);
         mEtSsid = (EditText) findViewById(R.id.ssid);
@@ -443,8 +437,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                     WifiBarcodeActivity.this.mEtPassword.setText(null);
                     WifiBarcodeActivity.this.mEtPassword.setEnabled(true);
                 } else {
-                    WifiAdapter a = (WifiAdapter) // .
-                            WifiBarcodeActivity.this.mSpConfigs.getAdapter();
+                    WifiAdapter a = (WifiAdapter) WifiBarcodeActivity.this.mSpConfigs.getAdapter();
                     WifiConfiguration wc = a.getItem(position);
                     WifiBarcodeActivity.this.mEtSsid.setText(wc.SSID
                             .replaceAll("\"", ""));
@@ -496,8 +489,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             }
         });
 
-        final int c = getResources().getColor(
-                android.R.color.background_light);
+        final int c = getResources().getColor(android.R.color.background_light);
         bCBackgroundColor = Integer.toHexString(Color.red(c))
                 + Integer.toHexString(Color.green(c))
                 + Integer.toHexString(Color.blue(c));
