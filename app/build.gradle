@@ -1,0 +1,115 @@
+apply plugin: 'android'
+
+repositories {
+    maven {
+        url 'https://github.com/felixb/ub0rlogg0r/raw/mvn-repo/'
+    }
+    mavenCentral()
+}
+
+def getVersionName = { ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'describe', '--tags'
+            standardOutput = stdout
+        }
+        def version = stdout.toString().trim().replaceFirst('^[a-zA-Z][^-]*-', '')
+        logger.info("version: ${version}")
+        return version
+    } catch (ignored) {
+        return null
+    }
+}
+
+def getVersionCode = { minSdk ->
+    def version = getVersionName()
+    def parts = version.split('[\\.]')
+    def l = parts.size()
+    def multi = 100000000
+    def code = minSdk * multi
+
+    for (int i = 0; i < l; i++) {
+        multi /= 100
+        code += parts[i].replaceFirst('-.*', '').toInteger() * multi
+    }
+
+    if (parts[l - 1].contains('-')) {
+        code += parts[l - 1].split('-')[1].toInteger()
+    }
+
+    def versionCode = code.toInteger()
+    logger.info("versionCode: ${versionCode}")
+    return versionCode
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.1.0"
+
+    defaultConfig {
+        packageName "de.ub0r.android.wifibarcode"
+        minSdkVersion 7
+        targetSdkVersion 19
+        versionName getVersionName()
+        versionCode getVersionCode(minSdkVersion)
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    signingConfigs {
+        if (project.hasProperty('releaseKeystorePassword')) {
+            release {
+                storeFile file("release.ks")
+                storePassword releaseKeystorePassword
+                keyAlias "jarsign"
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
+    lintOptions {
+        // checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+
+
+    buildTypes {
+        debug {
+            versionNameSuffix "-debug"
+        }
+
+        nologDebug {
+            versionNameSuffix "-debug"
+            signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            runProguard true
+            buildConfigField 'boolean', 'DEBUG_LOG', 'false'
+        }
+
+        logRelease {
+            versionNameSuffix "-logRelease"
+            signingConfig signingConfigs.release
+            runProguard false
+        }
+
+        release {
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            runProguard true
+            buildConfigField 'boolean', 'DEBUG_LOG', 'false'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:support-v4:19.1.+'
+    compile 'com.actionbarsherlock:actionbarsherlock:4.4.+@aar'
+    compile 'de.ub0r.android.logg0r:logg0r:1.1.+'
+}

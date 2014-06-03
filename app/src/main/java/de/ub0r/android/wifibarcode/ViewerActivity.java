@@ -18,26 +18,46 @@
  */
 package de.ub0r.android.wifibarcode;
 
-import android.os.Bundle;
-
 import com.actionbarsherlock.app.SherlockActivity;
 import com.actionbarsherlock.view.MenuItem;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.widget.ImageView;
+
 /**
- * Display About {@link SherlockActivity}.
+ * Show a barcode in full screen.
  * 
  * @author flx
  */
-public final class About extends SherlockActivity {
+public final class ViewerActivity extends SherlockActivity {
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		this.setContentView(R.layout.about);
-		this.setTitle(this.getString(R.string.about_) + " v"
-				+ this.getString(R.string.app_version));
+		this.setContentView(R.layout.viewer);
+		this.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void onResume() {
+		super.onResume();
+		final Intent i = this.getIntent();
+		Bitmap bitmap = i.getParcelableExtra(WifiBarcodeActivity.EXTRA_BARCODE);
+		if (bitmap == null) {
+			this.finish();
+		} else {
+			ImageView iv = (ImageView) this.findViewById(R.id.barcode);
+			iv.setImageBitmap(bitmap);
+			String s = i.getStringExtra(WifiBarcodeActivity.EXTRA_TITLE);
+			this.getSupportActionBar().setSubtitle(s);
+		}
 	}
 
 	/**

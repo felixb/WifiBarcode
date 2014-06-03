@@ -18,18 +18,9 @@
  */
 package de.ub0r.android.wifibarcode;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.List;
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuItem;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -62,14 +53,23 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.actionbarsherlock.app.SherlockActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuItem;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.List;
 
 import de.ub0r.android.lib.ChangelogHelper;
-import de.ub0r.android.lib.Log;
 import de.ub0r.android.lib.Market;
 import de.ub0r.android.lib.Utils;
+import de.ub0r.android.logg0r.Log;
 
 /**
  * Main {@link SherlockActivity} showing wifi configuration and barcodes.
@@ -79,11 +79,7 @@ import de.ub0r.android.lib.Utils;
 public final class WifiBarcodeActivity extends SherlockActivity implements
 		OnClickListener {
 	/** Tag for log output. */
-	private static final String TAG = "wba";
-
-	static {
-		Log.init("WifiBarcode");
-	}
+	private static final String TAG = "WifiBarcodeActivity";
 
 	/** Extra: barcode's bitmap. */
 	static final String EXTRA_BARCODE = "barcode";
@@ -611,8 +607,10 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 		adapter.clear();
 		adapter.add(custom);
 		this.flushWifiPasswords();
-		for (WifiConfiguration wc : wcs) {
-			adapter.add(wc, this.getWifiPassword(wc));
+		if (wcs != null) {
+			for (WifiConfiguration wc : wcs) {
+				adapter.add(wc, this.getWifiPassword(wc));
+			}
 		}
 	}
 
