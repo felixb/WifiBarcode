@@ -129,6 +129,8 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      */
     private boolean gotRoot = true;
 
+    private boolean mFirstLoad = true;
+
     /**
      * Cache barcodes.
      */
@@ -407,6 +409,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 
         if (savedInstanceState != null) {
             gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
+            mFirstLoad = savedInstanceState.getBoolean("mFirstLoad", true);
         } else {
             if (!this.getCacheFile().delete()) {
                 Log.e(TAG, "error deleting file: ", getCacheFile().getAbsolutePath());
@@ -503,6 +506,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
     protected void onSaveInstanceState(final Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(EXTRA_GOT_ROOT, gotRoot);
+        outState.putBoolean("mFirstLoad", mFirstLoad);
     }
 
     /**
@@ -621,15 +625,29 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         WifiAdapter adapter = (WifiAdapter) mSpConfigs.getAdapter();
         WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
         List<WifiConfiguration> wcs = wm.getConfiguredNetworks();
+        String currentSSID = wm.getConnectionInfo().getSSID();
+        Log.d(TAG, "currentSSID=", currentSSID);
         WifiConfiguration custom = new WifiConfiguration();
         custom.SSID = getString(R.string.custom);
         adapter.clear();
         adapter.add(custom);
         flushWifiPasswords();
+        Log.d(TAG, "#wcs=", wcs == null ? "null" : wcs.size());
         if (wcs != null) {
+            int selected = -1;
             for (WifiConfiguration wc : wcs) {
                 adapter.add(wc, getWifiPassword(wc));
+                Log.d(TAG, "wc.SSID=", wc.SSID);
+                if (mFirstLoad && currentSSID != null && currentSSID.equals(wc.SSID)) {
+                    selected = adapter.getCount() - 1;
+                    Log.d(TAG, "selected=", selected);
+                }
             }
+            if (selected > 0) {
+                // mFirstLoad == true
+                mSpConfigs.setSelection(selected);
+            }
+            mFirstLoad = false;
         }
     }
 
