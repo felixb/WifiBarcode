@@ -18,15 +18,6 @@
  */
 package de.ub0r.android.wifibarcode;
 
-import com.actionbarsherlock.app.SherlockActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuItem;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-
 import android.app.AlertDialog.Builder;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -39,6 +30,7 @@ import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -52,6 +44,15 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuItem;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -141,7 +142,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         /**
          * Cache dir.
          */
-        private final String cacheDir;
+        private final File cacheDir;
 
         /**
          * Default constructor.
@@ -150,13 +151,9 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
          */
         public BarcodeCache(final Context context) {
             super();
-            //noinspection ConstantConditions
-            cacheDir = context.getCacheDir().getAbsolutePath()
-                    + "/barcodes/";
-            File f = new File(cacheDir);
-            if (!f.isDirectory()) {
-                //noinspection ResultOfMethodCallIgnored
-                f.mkdir();
+            cacheDir = new File(getRealCacheDir(context), "barcodes");
+            if (!cacheDir.isDirectory() && !cacheDir.mkdirs()) {
+                Log.e(TAG, "error creating cache barcode cache dir");
             }
         }
 
@@ -231,11 +228,14 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
          * @return {@link File}
          */
         private File getFile(final String url) {
-            final String ret = cacheDir
-                    + url.replaceAll(".*chart\\?cht=", "").replaceAll("%", "_")
+            final File ret = new File(cacheDir, url2key(url));
+            Log.d(TAG, "getFile(", url, "): ", ret.getAbsolutePath());
+            return ret;
+        }
+
+        private String url2key(String url) {
+            return url.replaceAll(".*chart\\?cht=", "").replaceAll("%", "_")
                     .replaceAll("\\|", "_").replaceAll("&", "_");
-            Log.d(TAG, "getFile(", url, "): ", ret);
-            return new File(ret);
         }
     }
 
@@ -270,7 +270,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 
         @Override
         public View getDropDownView(final int position, final View convertView,
-                final ViewGroup parent) {
+                                    final ViewGroup parent) {
             View v = super.getDropDownView(position, convertView, parent);
             assert v != null;
             ((TextView) v.findViewById(android.R.id.text1)).setText(this
@@ -404,9 +404,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
             mFirstLoad = savedInstanceState.getBoolean("mFirstLoad", true);
         } else {
-            if (!this.getCacheFile().delete()) {
-                Log.e(TAG, "error deleting file: ", getCacheFile().getAbsolutePath());
-            }
+            flushWifiPasswords();
         }
 
         barcodes = new BarcodeCache(this);
@@ -424,7 +422,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         mSpConfigs.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(final AdapterView<?> parent,
-                    final View view, final int position, final long id) {
+                                       final View view, final int position, final long id) {
                 if (position == 0) {
                     WifiBarcodeActivity.this.mEtSsid.setText(null);
                     WifiBarcodeActivity.this.mEtSsid.setEnabled(true);
@@ -469,7 +467,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         mSpNetType.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(final AdapterView<?> parent,
-                    final View view, final int position, final long id) {
+                                       final View view, final int position, final long id) {
                 //noinspection ConstantConditions
                 String p = WifiBarcodeActivity.this.mEtPassword.getText()
                         .toString();
@@ -541,7 +539,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                             new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(final DialogInterface dialog,
-                                        final int which) {
+                                                    final int which) {
                                     // FIXME: install "com.google.zxing.client.android"
                                 }
                             }
@@ -562,7 +560,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      */
     @Override
     public void onActivityResult(final int requestCode, final int resultCode,
-            final Intent intent) {
+                                 final Intent intent) {
         if (requestCode == 0) {
             if (resultCode == RESULT_OK) {
                 final String contents = intent.getStringExtra("SCAN_RESULT");
@@ -735,13 +733,17 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      * Flush wifi password cache.
      */
     private void flushWifiPasswords() {
-        //noinspection ConstantConditions
-        final String targetFile = getCacheDir().getAbsolutePath()
-                + "/wpa_supplicant.conf";
-        File f = new File(targetFile);
-        if (f.exists()) {
-            //noinspection ResultOfMethodCallIgnored
-            f.delete();
+        final File f = getCacheFile();
+        if (f.exists() && !f.delete()) {
+            Log.e(TAG, "error deleting file: ", getCacheFile().getAbsolutePath());
+        }
+    }
+
+    private static File getRealCacheDir(final Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            return context.getExternalCacheDir();
+        } else {
+            return context.getCacheDir();
         }
     }
 
@@ -749,7 +751,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      * @return file holding cached wpa_supplicant.conf.
      */
     private File getCacheFile() {
-        return new File(getCacheDir(), "wpa_supplicant.conf");
+        return new File(getRealCacheDir(this), "wpa_supplicant.conf");
     }
 
     /**
@@ -763,11 +765,11 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         File f = getCacheFile();
         if (!f.exists()) {
             if (gotRoot) {
-                final String command = "cat /data/misc/wifi/wpa_supplicant.conf"
-                        + " > "
-                        + f.getAbsolutePath()
-                        + "\n chmod 666 "
-                        + f.getAbsolutePath();
+                final String tpl = "pkgid=$(grep '%s' /data/system/packages.list | cut -d' ' -f2)\n"
+                        + "cat /data/misc/wifi/wpa_supplicant.conf > '%s'\n"
+                        + "chown $pkgid:$pkgid '%s'\n"
+                        + "chmod 644 '%s'";
+                final String command = String.format(tpl, BuildConfig.APPLICATION_ID, f.getAbsolutePath(), f.getAbsolutePath(), f.getAbsolutePath());
                 if (!runAsRoot(command)) {
                     Toast.makeText(this, R.string.error_need_root,
                             Toast.LENGTH_LONG).show();
