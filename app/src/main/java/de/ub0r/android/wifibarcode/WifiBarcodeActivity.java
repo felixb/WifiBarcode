@@ -66,9 +66,6 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 
-import de.ub0r.android.lib.ChangelogHelper;
-import de.ub0r.android.lib.Market;
-import de.ub0r.android.lib.Utils;
 import de.ub0r.android.logg0r.Log;
 
 /**
@@ -210,7 +207,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                 // f.createNewFile();
                 FileOutputStream os = new FileOutputStream(f);
 
-                byte[] buffer = new byte[Utils.K];
+                byte[] buffer = new byte[1024];
                 int l;
                 while ((l = is.read(buffer)) > 0) {
                     Log.d(TAG, "write bytes: ", l);
@@ -403,10 +400,6 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        ChangelogHelper.showChangelog(this,
-                getString(R.string.changelog_),
-                getString(R.string.app_name), R.array.updates, -1);
-
         if (savedInstanceState != null) {
             gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
             mFirstLoad = savedInstanceState.getBoolean("mFirstLoad", true);
@@ -549,11 +542,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                                 @Override
                                 public void onClick(final DialogInterface dialog,
                                         final int which) {
-                                    Market.installApp(WifiBarcodeActivity.this,
-                                            "com.google.zxing" + ".client.android",
-                                            "http://code.google.com/p"
-                                                    + "/zxing/downloads/list"
-                                    );
+                                    // FIXME: install "com.google.zxing.client.android"
                                 }
                             }
                     );
@@ -562,9 +551,6 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                 return true;
             case R.id.item_about:
                 startActivity(new Intent(this, About.class));
-                return true;
-            case R.id.item_more_apps:
-                Market.searchMoreApps(this);
                 return true;
             default:
                 return false;

@@ -42,7 +42,6 @@
 	<string name="install_barcode_scanner_hint">You need to install <b>Barcode Scanner</b>.</string>
 	<string name="install">Install</string>
 	<string name="about_">About WiFiBarcode</string>
-	<string name="more_apps_">More Apps..</string>
 	<string-array name="networktypes_">
 		<item>Open</item>
 		<item>WEP</item>

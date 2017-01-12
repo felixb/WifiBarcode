@@ -8,8 +8,6 @@ commit.log
 app/gradle.properties
 .idea
 .gradle
-gradlew*
 *.iml
-gradle
 build
 release.ks
