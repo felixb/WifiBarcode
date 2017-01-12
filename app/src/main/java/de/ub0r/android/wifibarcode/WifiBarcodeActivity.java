@@ -82,6 +82,8 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      */
     private static final String TAG = "WifiBarcodeActivity";
 
+    private static final String BARCODE_READER_URL = "https://play.google.com/store/apps/details?id=com.google.zxing.client.android";
+
     /**
      * Extra: barcode's bitmap.
      */
@@ -540,7 +542,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                                 @Override
                                 public void onClick(final DialogInterface dialog,
                                                     final int which) {
-                                    // FIXME: install "com.google.zxing.client.android"
+                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(BARCODE_READER_URL)));
                                 }
                             }
                     );
