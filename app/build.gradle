@@ -21,11 +21,15 @@ android {
 
     signingConfigs {
         release {
-            if (project.hasProperty('releaseKeystorePassword')) {
-                storeFile file("release.ks")
-                storePassword releaseKeystorePassword
+            File releaseProps = new File("release.properties")
+            if (releaseProps.exists()) {
+                Properties props = new Properties()
+                props.load(new FileInputStream(releaseProps))
+
+                storeFile file("../release.ks")
+                storePassword props.getProperty("releaseKeystorePassword")
                 keyAlias "jarsign"
-                keyPassword releaseKeyPassword
+                keyPassword props.getProperty("releaseKeyPassword")
             }
         }
     }
