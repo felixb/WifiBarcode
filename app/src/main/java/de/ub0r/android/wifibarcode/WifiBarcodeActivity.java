@@ -32,6 +32,7 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -261,10 +262,10 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             super(context, textViewResourceId);
         }
 
+        @NonNull
         @Override
         public View getView(final int position, final View convertView, final ViewGroup parent) {
             View v = super.getView(position, convertView, parent);
-            assert v != null;
             ((TextView) v.findViewById(android.R.id.text1)).setText(this
                     .getItem(position).SSID.replaceAll("\"", ""));
             return v;
@@ -609,7 +610,8 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      */
     private void loadWifiConfigurations() {
         WifiAdapter adapter = (WifiAdapter) mSpConfigs.getAdapter();
-        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+        WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        assert wm != null;
         List<WifiConfiguration> wcs = wm.getConfiguredNetworks();
         String currentSSID = wm.getConnectionInfo().getSSID();
         Log.d(TAG, "currentSSID=", currentSSID);
@@ -683,7 +685,8 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                 break;
         }
 
-        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+        WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        assert wm != null;
         int netId = wm.addNetwork(wc);
         int msg;
         final boolean ret = wm.saveConfiguration();
