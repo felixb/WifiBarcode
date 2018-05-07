@@ -9,7 +9,7 @@ repositories {
 
 android {
     compileSdkVersion 22
-    buildToolsVersion "25.0.2"
+    buildToolsVersion "25.0.3"
 
     defaultConfig {
         applicationId "de.ub0r.android.wifibarcode"
@@ -73,5 +73,5 @@ android {
 dependencies {
     compile 'com.android.support:support-v4:22.2.1'
     compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
-    compile 'de.ub0r.android.logg0r:logg0r:1.1.2'
+    compile 'de.ub0r.android.logg0r:logg0r:2.0.0'
 }
