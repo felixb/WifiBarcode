@@ -26,12 +26,10 @@
 	<string name="ssid">SSID</string>
 	<string name="password">Passwort</string>
 	<string name="networktype">Netzwerk Typ</string>
-	<string name="generate">Barcode generieren</string>
 	<string name="wifi_config">WLAN Einstellungen</string>
 	<string name="error_need_root">Brauche root um die WLAN Passwörter auszulesen!</string>
 	<string name="error_read_file">Fehler beim Auslesen der WLAN Config!</string>
 	<string name="error_read_barcode">Fehler beim Auslesen des Barcodes!</string>
-	<string name="error_get_barcode">Fehler beim Laden des Barcodes!\nÜberprüfe deine Internetverbindung.</string>
 	<string name="custom">Benutzerdefiniert</string>
 	<string name="scan">Scan</string>
 	<string name="add">Netzwerk hinzufügen</string>

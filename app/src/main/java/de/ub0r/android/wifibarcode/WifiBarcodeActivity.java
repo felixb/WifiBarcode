@@ -137,7 +137,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 
         @NonNull
         @Override
-        public View getView(final int position, final View convertView, final ViewGroup parent) {
+        public View getView(final int position, final View convertView, @NonNull final ViewGroup parent) {
             View v = super.getView(position, convertView, parent);
             ((TextView) v.findViewById(android.R.id.text1)).setText(this
                     .getItem(position).SSID.replaceAll("\"", ""));
@@ -146,7 +146,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
 
         @Override
         public View getDropDownView(final int position, final View convertView,
-                                    final ViewGroup parent) {
+                                    @NonNull final ViewGroup parent) {
             View v = super.getDropDownView(position, convertView, parent);
             assert v != null;
             ((TextView) v.findViewById(android.R.id.text1)).setText(this
@@ -271,6 +271,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                 } else {
                     WifiAdapter a = (WifiAdapter) WifiBarcodeActivity.this.mSpConfigs.getAdapter();
                     WifiConfiguration wc = a.getItem(position);
+                    assert wc != null;
                     WifiBarcodeActivity.this.mEtSsid.setText(wc.SSID
                             .replaceAll("\"", ""));
                     WifiBarcodeActivity.this.mEtSsid.setEnabled(false);

@@ -26,12 +26,10 @@
 	<string name="ssid">SSID</string>
 	<string name="password">Password</string>
 	<string name="networktype">Network Type</string>
-	<string name="generate">Generate Barcode</string>
 	<string name="wifi_config">WiFi Settings</string>
 	<string name="error_need_root">Need root, to fetch WiFi password!</string>
 	<string name="error_read_file">Error reading WiFi config!</string>
 	<string name="error_read_barcode">Error reading Barcode!</string>
-	<string name="error_get_barcode">Error getting Barcode!\nCheck your network connection.</string>
 	<string name="custom">Custom</string>
 	<string name="scan">Scan</string>
 	<string name="add">Add Network</string>
@@ -47,5 +45,4 @@
 		<item>WEP</item>
 		<item>WPA/WPA2</item>
 	</string-array>
-	<string name="changelog_" translatable="false">Changelog</string>
 </resources>
