@@ -28,9 +28,6 @@
 			<ImageView android:id="@+id/barcode" android:layout_height="wrap_content"
 				android:layout_width="wrap_content" android:scaleType="fitCenter"
 				android:visibility="gone" android:layout_centerInParent="true" />
-			<ProgressBar android:id="@+id/progress"
-				android:layout_height="wrap_content" android:layout_width="wrap_content"
-				android:visibility="gone" android:layout_centerInParent="true" />
 			<TextView android:id="@+id/c2e" android:layout_height="wrap_content"
 				android:layout_width="wrap_content" android:text="@string/click_to_enlarge"
 				android:layout_alignParentBottom="true"

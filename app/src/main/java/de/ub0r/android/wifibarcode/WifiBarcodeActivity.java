@@ -1,18 +1,18 @@
 /*
  * Copyright (C) 2011-2012 Felix Bechstein
- * 
+ *
  * This file is part of WifiBarcode.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation; either version 3 of the License, or (at your option) any later
  * version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with
  * this program; If not, see <http://www.gnu.org/licenses/>.
  */
@@ -24,12 +24,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -49,22 +47,16 @@ import android.widget.Toast;
 import com.actionbarsherlock.app.SherlockActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 
@@ -96,11 +88,6 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
     static final String EXTRA_TITLE = "title";
 
     /**
-     * Cache barcodes.
-     */
-    private BarcodeCache barcodes;
-
-    /**
      * Local {@link Spinner}s.
      */
     private Spinner mSpConfigs, mSpNetType;
@@ -109,16 +96,12 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      * Local {@link EditText}s.
      */
     private EditText mEtSsid, mEtPassword;
-
-    /**
-     * BarCode's background color.
-     */
-    private String bCBackgroundColor = "FFFFFF";
+    private Bitmap mCurrentBarcode;
 
     /**
      * BarCode's size.
      */
-    private String bCSize = "200x200";
+    private int barcodeSize = 200;
 
     /**
      * Extra: Got root?
@@ -131,116 +114,6 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
     private boolean gotRoot = true;
 
     private boolean mFirstLoad = true;
-
-    /**
-     * Cache barcodes.
-     */
-    private static class BarcodeCache extends HashMap<String, Bitmap> {
-
-        /**
-         * Serial Version UID.
-         */
-        private static final long serialVersionUID = -1563072588317040645L;
-
-        /**
-         * Cache dir.
-         */
-        private final File cacheDir;
-
-        /**
-         * Default constructor.
-         *
-         * @param context {@link Context}
-         */
-        public BarcodeCache(final Context context) {
-            super();
-            cacheDir = new File(getRealCacheDir(context), "barcodes");
-            if (!cacheDir.isDirectory() && !cacheDir.mkdirs()) {
-                Log.e(TAG, "error creating cache barcode cache dir");
-            }
-        }
-
-        @Override
-        public Bitmap get(final Object key) {
-            Log.d(TAG, "cache.get(", key, ")");
-            Bitmap b = super.get(key);
-            if (b == null) {
-                Log.v(TAG, "cache/miss");
-                try {
-                    // get bitmap from file system
-                    String url = (String) key;
-                    File f = getFile(url);
-                    if (f.exists()) {
-                        Log.i(TAG, "load barcode from file system..");
-                        b = BitmapFactory.decodeStream(new FileInputStream(f));
-                        if (b != null) {
-                            // save barcode to memory cache
-                            super.put(url, b);
-                        }
-                    }
-                } catch (IOException e) {
-                    Log.e(TAG, "io error", e);
-                }
-            }
-            return b;
-        }
-
-        /**
-         * Load a bitmap from input stream and save it to file.
-         *
-         * @param key url
-         * @param is  {@link InputStream}
-         * @return {@link Bitmap}
-         */
-        public Bitmap put(final String key, final InputStream is) {
-            Log.d(TAG, "cache.put(", key, ")");
-            if (key == null || is == null) {
-                return null;
-            }
-            // final Bitmap b = BitmapFactory.decodeStream(is);
-
-            // super.put(key, b);
-            // put bitmap to file system
-            File f = getFile(key);
-            Log.i(TAG, "file ", f.getAbsolutePath(), " does not exist, write it..");
-            try {
-                // f.createNewFile();
-                FileOutputStream os = new FileOutputStream(f);
-
-                byte[] buffer = new byte[1024];
-                int l;
-                while ((l = is.read(buffer)) > 0) {
-                    Log.d(TAG, "write bytes: ", l);
-                    os.write(buffer, 0, l);
-                }
-                os.close();
-                Log.d(TAG, "done");
-            } catch (IOException e) {
-                Log.e(TAG, "error writing file: ", f.getAbsolutePath(), e);
-            }
-
-            Bitmap b = BitmapFactory.decodeFile(f.getAbsolutePath());
-            super.put(key, b);
-            return b;
-        }
-
-        /**
-         * Get {@link File} object for a barcode's url.
-         *
-         * @param url url
-         * @return {@link File}
-         */
-        private File getFile(final String url) {
-            final File ret = new File(cacheDir, url2key(url));
-            Log.d(TAG, "getFile(", url, "): ", ret.getAbsolutePath());
-            return ret;
-        }
-
-        private String url2key(String url) {
-            return url.replaceAll(".*chart\\?cht=", "").replaceAll("%", "_")
-                    .replaceAll("\\|", "_").replaceAll("&", "_");
-        }
-    }
 
     /**
      * Show wifi configuration as {@link ArrayAdapter}.
@@ -314,42 +187,6 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
     }
 
     /**
-     * Load barcodes in background.
-     */
-    private class BarcodeLoader extends AsyncTask<String, Void, Exception> {
-
-        @Override
-        protected Exception doInBackground(final String... url) {
-            DefaultHttpClient httpClient = new DefaultHttpClient();
-            for (String u : url) {
-                try {
-                    Log.d(TAG, "load barcode: ", u);
-                    HttpResponse repsonse = httpClient.execute(new HttpGet(u));
-                    if (repsonse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                        WifiBarcodeActivity.this.barcodes.put(u, repsonse
-                                .getEntity().getContent());
-                    }
-                } catch (IOException e) {
-                    Log.e(TAG, "error fetching barcode", e);
-                    return e;
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(final Exception result) {
-            WifiBarcodeActivity.this.showBarcode(true);
-            if (result != null) {
-                Toast.makeText(WifiBarcodeActivity.this, result.toString(),
-                        Toast.LENGTH_LONG).show();
-                Toast.makeText(WifiBarcodeActivity.this,
-                        R.string.error_get_barcode, Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    /**
      * Encloses the incoming string inside double quotes, if it isn't already quoted.
      *
      * @param string : the input string
@@ -410,8 +247,6 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             flushWifiPasswords();
         }
 
-        barcodes = new BarcodeCache(this);
-
         WifiAdapter adapter = new WifiAdapter(this, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         findViewById(R.id.add).setOnClickListener(this);
@@ -454,7 +289,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                     WifiBarcodeActivity.this.mEtPassword.setEnabled(i != 0
                             && TextUtils.isEmpty(p));
                 }
-                WifiBarcodeActivity.this.showBarcode(true);
+                WifiBarcodeActivity.this.showBarcode();
                 WifiBarcodeActivity.this.findViewById(R.id.add).setVisibility(
                         View.GONE);
 
@@ -486,11 +321,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             }
         });
 
-        final int c = getResources().getColor(android.R.color.background_light);
-        bCBackgroundColor = Integer.toHexString(Color.red(c))
-                + Integer.toHexString(Color.green(c))
-                + Integer.toHexString(Color.blue(c));
-        bCSize = getString(R.string.barcode_size);
+        barcodeSize = getResources().getInteger(R.integer.barcode_size);
     }
 
     /**
@@ -519,9 +350,6 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
     public boolean onOptionsItemSelected(final MenuItem item) {
         Log.d(TAG, "onOptionsItemSelected(", item.getItemId(), ")");
         switch (item.getItemId()) {
-            case R.id.item_generate:
-                showBarcode(false);
-                return true;
             case R.id.item_wifi_config:
                 startActivity(new Intent("android.settings.WIFI_SETTINGS"));
                 return true;
@@ -583,11 +411,8 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                 addWifi();
                 break;
             case R.id.barcode:
-                final String url = getUrl();
-                final Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url),
-                        this, ViewerActivity.class);
-                i.putExtra(EXTRA_BARCODE, barcodes.get(url));
-                //noinspection ConstantConditions
+                final Intent i = new Intent(this, ViewerActivity.class);
+                i.putExtra(EXTRA_BARCODE, mCurrentBarcode);
                 i.putExtra(EXTRA_TITLE, mEtSsid.getText().toString());
                 startActivity(i);
                 break;
@@ -596,9 +421,6 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -833,15 +655,8 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         return null;
     }
 
-    /**
-     * Get current BarCode's URL.
-     *
-     * @return URL
-     */
-    private String getUrl() {
-        String url = "http://chart.apis.google.com/" + "chart?cht=qr&chs="
-                + bCSize + "&chld=2&chf=bg,s," + bCBackgroundColor
-                + "&chl=";
+    @NonNull
+    private String getBarcodeContent() {
         int type = mSpNetType.getSelectedItemPosition();
         String[] types = getResources().getStringArray(
                 R.array.networktypes);
@@ -857,42 +672,27 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             sb.append(mEtPassword.getText());
         }
         sb.append(";;");
-        try {
-            url += URLEncoder.encode(sb.toString(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            Log.e(TAG, "error url encoding barcode");
-        }
-        return url;
+        return sb.toString();
     }
 
-    /**
-     * Show barcode.
-     *
-     * @param cacheOnly load only from cache
-     */
-    private void showBarcode(final boolean cacheOnly) {
-        final String url = getUrl();
-        if (!cacheOnly && !this.barcodes.containsKey(url)) {
-            Log.i(TAG, "barcode not available, load it...");
-            BarcodeLoader loader = new BarcodeLoader();
-            loader.execute(url);
-        }
-        ImageView iv = (ImageView) findViewById(R.id.barcode);
-        Bitmap bc = barcodes.get(url);
-        if (bc != null) {
-            iv.setImageBitmap(bc);
-            iv.setVisibility(View.VISIBLE);
-            findViewById(R.id.c2e).setVisibility(View.VISIBLE);
-            findViewById(R.id.progress).setVisibility(View.GONE);
-        } else {
-            iv.setVisibility(View.GONE);
-            findViewById(R.id.c2e).setVisibility(View.GONE);
-            if (!cacheOnly) {
-                findViewById(R.id.progress).setVisibility(View.VISIBLE);
+    private void showBarcode() {
+        QRCodeWriter w = new QRCodeWriter();
+        try {
+            final BitMatrix qrCode = w.encode(getBarcodeContent(), BarcodeFormat.QR_CODE, barcodeSize, barcodeSize);
+            final int width = qrCode.getWidth();
+            final int height = qrCode.getHeight();
+            mCurrentBarcode = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    mCurrentBarcode.setPixel(x, y, qrCode.get(x, y) ? Color.BLACK : Color.WHITE);
+                }
             }
-        }
-        if (cacheOnly) {
-            findViewById(R.id.progress).setVisibility(View.GONE);
+            final ImageView iv = (ImageView) findViewById(R.id.barcode);
+            iv.setVisibility(View.VISIBLE);
+            iv.setImageBitmap(mCurrentBarcode);
+            findViewById(R.id.c2e).setVisibility(View.VISIBLE);
+        } catch (WriterException e) {
+            Log.e(TAG, "error generating qr code", e);
         }
     }
 }

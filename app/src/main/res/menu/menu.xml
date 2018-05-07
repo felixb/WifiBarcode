@@ -18,8 +18,6 @@
 		not, see <http://www.gnu.org/licenses/>.
 	-->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-	<item android:id="@+id/item_generate" android:title="@string/generate"
-		android:icon="@android:drawable/ic_menu_share" android:showAsAction="always|withText" />
 	<item android:id="@+id/item_scan" android:title="@string/scan"
 		android:icon="@android:drawable/ic_menu_camera" android:showAsAction="always|withText" />
 	<item android:id="@+id/item_wifi_config" android:title="@string/wifi_config"
