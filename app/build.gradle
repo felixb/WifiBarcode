@@ -15,8 +15,8 @@ android {
         applicationId "de.ub0r.android.wifibarcode"
         minSdkVersion 7
         targetSdkVersion 22
-        versionName "1.4"
-        versionCode 701040000
+        versionName "1.5"
+        versionCode 701050000
     }
 
     signingConfigs {
