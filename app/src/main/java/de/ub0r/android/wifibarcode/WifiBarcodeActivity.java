@@ -52,9 +52,12 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+import org.xmlpull.v1.XmlPullParserException;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
@@ -76,6 +79,10 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
     private static final String TAG = "WifiBarcodeActivity";
 
     private static final String BARCODE_READER_URL = "https://play.google.com/store/apps/details?id=com.google.zxing.client.android";
+
+    private static final String SECRETS_FILE_PLAIN = "wpa_supplicant.conf";
+    private static final String SECRETS_FILE_XML = "WifiConfigStore.xml";
+    private static final String[] SECRET_FILES = new String[]{SECRETS_FILE_XML, SECRETS_FILE_PLAIN};
 
     /**
      * Extra: barcode's bitmap.
@@ -111,9 +118,11 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
     /**
      * False if runAsRoot failed.
      */
-    private boolean gotRoot = true;
+    private boolean mGotRoot = true;
 
     private boolean mFirstLoad = true;
+
+    private boolean mXmlConfig = false;
 
     /**
      * Show wifi configuration as {@link ArrayAdapter}.
@@ -241,7 +250,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
         setContentView(R.layout.main);
 
         if (savedInstanceState != null) {
-            gotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
+            mGotRoot = savedInstanceState.getBoolean(EXTRA_GOT_ROOT, true);
             mFirstLoad = savedInstanceState.getBoolean("mFirstLoad", true);
         } else {
             flushWifiPasswords();
@@ -331,7 +340,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
     @Override
     protected void onSaveInstanceState(final Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putBoolean(EXTRA_GOT_ROOT, gotRoot);
+        outState.putBoolean(EXTRA_GOT_ROOT, mGotRoot);
         outState.putBoolean("mFirstLoad", mFirstLoad);
     }
 
@@ -561,9 +570,15 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      * Flush wifi password cache.
      */
     private void flushWifiPasswords() {
-        final File f = getCacheFile();
+        for (String name : SECRET_FILES) {
+            deleteCacheFile(name);
+        }
+    }
+
+    private void deleteCacheFile(final String name) {
+        final File f = getCacheFile(name);
         if (f.exists() && !f.delete()) {
-            Log.e(TAG, "error deleting file: ", getCacheFile().getAbsolutePath());
+            Log.e(TAG, "error deleting file: ", f);
         }
     }
 
@@ -579,42 +594,54 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
      * @return file holding cached wpa_supplicant.conf.
      */
     private File getCacheFile() {
-        return new File(getRealCacheDir(this), "wpa_supplicant.conf");
+        return getCacheFile("wpa_supplicant.conf");
     }
 
-    /**
-     * Get WiFi password.
-     *
-     * @param wc {@link WifiConfiguration}
-     * @return password
-     */
-    private String getWifiPassword(final WifiConfiguration wc) {
-        Log.d(TAG, "getWifiPassword(", wc, ")");
-        File f = getCacheFile();
-        if (!f.exists()) {
-            if (gotRoot) {
-                final String tpl = "pkgid=$(grep '%s' /data/system/packages.list | cut -d' ' -f2)\n"
-                        + "cat /data/misc/wifi/wpa_supplicant.conf > '%s'\n"
-                        + "chown $pkgid:$pkgid '%s'\n"
-                        + "chmod 644 '%s'";
-                final String command = String.format(tpl, BuildConfig.APPLICATION_ID, f.getAbsolutePath(), f.getAbsolutePath(), f.getAbsolutePath());
-                if (!runAsRoot(command)) {
-                    Toast.makeText(this, R.string.error_need_root,
-                            Toast.LENGTH_LONG).show();
-                    gotRoot = false;
-                    return null;
-                }
+    private File getCacheFile(final String name) {
+        return new File(getRealCacheDir(this), name);
+    }
+
+    private String buildCommand(String name, File target) {
+        final String targetPath = target.getAbsolutePath();
+        final String tpl = "pkgid=$(grep '%s' /data/system/packages.list | cut -d' ' -f2)\n"
+                + "cat /data/misc/wifi/%s > '%s'\n"
+                + "chown $pkgid:$pkgid '%s'\n"
+                + "chmod 644 '%s'";
+        return String.format(tpl, BuildConfig.APPLICATION_ID, name, targetPath, targetPath, targetPath);
+    }
+
+    private File ensureCacheFile(final String name) {
+        final File target = getCacheFile(name);
+        if (target.exists()) {
+            return target;
+        }
+
+        final String command = buildCommand(name, target);
+        if (!runAsRoot(command)) {
+            return null;
+        }
+        return target;
+    }
+
+    private File ensureCacheFiles() {
+        File target = ensureCacheFile(SECRETS_FILE_XML);
+        if (target != null) {
+            mXmlConfig = true;
+            return new File(target.getAbsolutePath());
+        } else {
+            target = ensureCacheFile(SECRETS_FILE_PLAIN);
+            if (target != null) {
+                mXmlConfig = false;
+                return new File(target.getAbsolutePath());
             } else {
-                Log.w(TAG, "gotRoot=false");
+                Toast.makeText(this, R.string.error_need_root, Toast.LENGTH_LONG).show();
+                mGotRoot = false;
                 return null;
             }
         }
-        f = new File(f.getAbsolutePath());
-        if (!f.exists()) {
-            Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG)
-                    .show();
-            return null;
-        }
+    }
+
+    private String parsePlainConfig(final File f, final String ssid) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(f));
             String l;
@@ -623,7 +650,7 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                 if (l.startsWith("network=") || l.equals("}")) {
                     String config = sb.toString();
                     // parse it
-                    if (config.contains("ssid=" + wc.SSID)) {
+                    if (config.contains("ssid=" + ssid)) {
                         Log.d(TAG, "wifi config:");
                         Log.d(TAG, config);
                         int i = config.indexOf("wep_key0=");
@@ -635,9 +662,11 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
                             len = "wep_key0=".length();
                         }
                         if (i < 0) {
+                            br.close();
                             return null;
                         }
 
+                        br.close();
                         return config.substring(i + len + 1,
                                 config.indexOf("\n", i) - 1);
 
@@ -649,11 +678,42 @@ public final class WifiBarcodeActivity extends SherlockActivity implements
             br.close();
         } catch (IOException e) {
             Log.e(TAG, "error reading file", e);
-            Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG)
-                    .show();
+            Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG).show();
             return null;
         }
         return null;
+    }
+
+    private String parseXmlConfig(final File f, final String ssid) {
+        try {
+            return new XmlConfigParser().parse(new FileInputStream(f), ssid);
+        } catch (IOException | XmlPullParserException e) {
+            Log.e(TAG, "error reading file", e);
+            Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG).show();
+            return null;
+        }
+    }
+
+
+    /**
+     * Get WiFi password.
+     *
+     * @param wc {@link WifiConfiguration}
+     * @return password
+     */
+    private String getWifiPassword(final WifiConfiguration wc) {
+        Log.d(TAG, "getWifiPassword(", wc, ")");
+        final File f = ensureCacheFiles();
+        if (f == null) {
+            return null;
+        }
+
+        if (!f.exists()) {
+            Toast.makeText(this, R.string.error_read_file, Toast.LENGTH_LONG).show();
+            return null;
+        }
+
+        return mXmlConfig ? parseXmlConfig(f, wc.SSID) : parsePlainConfig(f, wc.SSID);
     }
 
     @NonNull
