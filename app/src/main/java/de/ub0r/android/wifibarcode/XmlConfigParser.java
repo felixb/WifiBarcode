@@ -56,10 +56,10 @@ public class XmlConfigParser {
                 continue;
             }
             String name = parser.getName();
-            if (name.equals("string")) {
+            if ("string".equals(name)) {
                 final String nameAttribute = parser.getAttributeValue(ns, "name");
                 if ("SSID".equals(nameAttribute)) {
-                    wifiSsid = readString(parser, false);
+                    wifiSsid = readString(parser);
                     if (!ssid.equals(wifiSsid)) {
                         closeTag(parser);
                         skip(parser, 3);
@@ -69,10 +69,23 @@ public class XmlConfigParser {
                         return wifiPassword;
                     }
                 } else if ("PreSharedKey".equals(nameAttribute)) {
-                    wifiPassword = readString(parser, true);
+                    wifiPassword = stripQuotes(readString(parser));
                     if (wifiSsid != null) {
                         return wifiPassword;
                     }
+                } else {
+                    skip(parser);
+                }
+            } else if ("string-array".equals(name)) {
+                final String nameAttribute = parser.getAttributeValue(ns, "name");
+                if ("WEPKeys".equals(nameAttribute)) {
+                    parser.nextTag();
+                    wifiPassword = stripQuotes(parser.getAttributeValue(null, "value"));
+                    if (wifiSsid != null) {
+                        return wifiPassword;
+                    }
+                    closeTag(parser);
+                    skip(parser, 2);
                 } else {
                     skip(parser);
                 }
@@ -90,14 +103,17 @@ public class XmlConfigParser {
         return wifiPassword;
     }
 
-    private String readString(XmlPullParser parser, final boolean stripQuotes) throws IOException, XmlPullParserException {
+    private String stripQuotes(final String text) {
+        if (text != null && text.matches("^\".*\"$")) {
+            return text.substring(1, text.length() - 1);
+        }
+        return text;
+    }
+
+    private String readString(XmlPullParser parser) throws IOException, XmlPullParserException {
         parser.require(XmlPullParser.START_TAG, ns, "string");
         String text = readText(parser);
         parser.require(XmlPullParser.END_TAG, ns, "string");
-
-        if (stripQuotes && text.matches("^\".*\"$")) {
-            return text.substring(1, text.length() - 1);
-        }
         return text;
     }
 
@@ -109,7 +125,6 @@ public class XmlConfigParser {
         }
         return result;
     }
-
 
 
     private void skip(final XmlPullParser parser) throws XmlPullParserException, IOException {
